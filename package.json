@@ -1,0 +1,20 @@
+{
+  "name": "elecon-adapters",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "elecon 社区 adapter 仓库。贡献者在此提交学校 adapter;CI 做静态校验(schema / 脱敏 / 凭证等价物)。签名与分发在私有核心侧(ADR-018)。",
+  "scripts": {
+    "validate": "ELECON_ADAPTERS_ROOT=adapters tsx vendor/tools/src/validator/index.ts",
+    "scan": "tsx vendor/tools/src/scanner/index.ts --path=adapters",
+    "check": "npm run validate && npm run scan"
+  },
+  "dependencies": {
+    "@elecon/broker-primitives": "file:./vendor/packages/broker-primitives",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

@@ -1,0 +1,28 @@
+name: adapter-ci
+
+# 公开 adapters 仓的静态闸门（ADR-018 §2.10 / §2.11 MVP）。
+# 只做无凭证、无密钥的静态校验 —— 本仓库无任何签名能力（签名在私有核心侧，ADR-018 §2.8）。
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install (vendored 校验器依赖)
+        run: npm install
+
+      - name: Validate manifests（schema / 白名单 / capability / stdlibMin …）
+        run: npm run validate
+
+      - name: Scan fixtures（PII + 凭证等价物脱敏，红线 #1/#8）
+        run: npm run scan
