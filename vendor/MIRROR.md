@@ -11,7 +11,7 @@
 | `tools/src/{validator,scanner}/` | core `tools/src/` | CI 静态闸门（§2.10）;**不含 signer** |
 | `packages/broker-primitives/` | core `packages/broker-primitives/dist` | validator 依赖的 url-match 原语 |
 
-- 源提交（core）：`a945d4bba91f19302719b752603305424f2c1050`
+- 源提交（core）：`f40e7d55d911b5907fa4e9e5ccdd78ca31a86967`
 - stdlib 版本：1.0.0
 
 > 若核心 tool 依赖（ajv / ajv-formats / tsx）版本变化，需同步更新公开仓根 `package.json`。
