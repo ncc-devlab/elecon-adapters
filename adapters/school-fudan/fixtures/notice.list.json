@@ -1,0 +1,31 @@
+{
+  "_note": "脱敏公开通知 fixture。标题和链接为测试值，不含真实学生信息或认证材料。",
+  "capability": "notice.list",
+  "params": { "page": 1 },
+  "responses": {
+    "page": {
+      "status": 200,
+      "headers": { "content-type": "text/html; charset=utf-8" },
+      "body": "<html><body><div class=\"wp_article_list\"><a href=\"/info/1001/20001.htm\" data-date=\"2026-07-01\">关于示例教学安排的通知</a><a href=\"/info/1001/20002.htm\">示例课程调整公告</a><a href=\"javascript:void(0)\">无效链接</a></div></body></html>"
+    }
+  },
+  "expected": {
+    "items": [
+      {
+        "id": "20001",
+        "title": "关于示例教学安排的通知",
+        "url": "https://jwc.fudan.edu.cn/info/1001/20001.htm",
+        "category": "academic",
+        "source": "本科生院",
+        "publishedAt": "2026-07-01T00:00:00Z"
+      },
+      {
+        "id": "20002",
+        "title": "示例课程调整公告",
+        "url": "https://jwc.fudan.edu.cn/info/1001/20002.htm",
+        "category": "academic",
+        "source": "本科生院"
+      }
+    ]
+  }
+}

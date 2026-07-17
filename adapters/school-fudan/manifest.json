@@ -1,0 +1,20 @@
+{
+  "manifestVersion": "1.0",
+  "adapterId": "school-fudan",
+  "adapterVersion": "0.1.0",
+  "schoolId": "fudan",
+  "displayName": "复旦大学（本科生院通知）",
+  "trustTier": "official",
+  "mode": "fetch",
+  "runtime": { "engine": "quickjs", "entry": "index.js" },
+  "network": {
+    "allow": ["https://jwc.fudan.edu.cn/*"]
+  },
+  "capabilities": [
+    {
+      "id": "notice.list",
+      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" },
+      "params": { "schema": "elecon.params.notice.list", "schemaVersion": "1.0" }
+    }
+  ]
+}
