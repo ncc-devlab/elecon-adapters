@@ -4,6 +4,10 @@
 > （`notice.list`）。选它是因为它需要 fetch 模式（多步 + JS 反爬挑战），但数据公开、
 > **不碰学生凭证**——以最低风险锻炼整条 fetch 链（ADR-009）。
 
+**发布状态：可复现验证通过，尚未进入正式签名发布流程。** 该 adapter 必须走 fetch 慢车道；核心人工
+审查确认 `network.allow`、passthrough/凭证域隔离、ephemeral cookie 生命周期及 token 不入凭证库后，
+才能进入 bundle/digest、YubiKey 签名和 catalog。
+
 ## 1. 实测流程（来自 `fetch.py` 逆向）
 
 ```
@@ -58,6 +62,12 @@ spike（`fetch.py:69-74`）从 POST 的 **JSON 响应体** 读 `client_id`，再
 - 红线 #1 不破：这里写回的是 adapter 已从 passthrough body 中读到的反爬 token，不是学生凭证。
 
 ## 5. 录制脱敏夹具（需用户在本机/校园网跑，AI 不直连真实校服务器）
+
+## 6. 生产化前置条件
+
+- `browser_info` 当前是 Chrome/Linux 硬编码 spike，不能作为长期生产策略。
+- 应由宿主注入受控、版本化的浏览器信息，或维护经审查的策略版本；adapter 不得自行读取宿主隐私信息。
+- 改动后必须重新进行核心 `smoke:xjt`、静态检查和人工 network/passthrough 审查。
 
 需要三份**脱敏后**的固定夹具供回放（ADR-009 §3.6）：
 1. `challenge.html` —— 步骤[1] 的挑战页（含 `var challengeId/answer`，可用假值替换真实 id）。

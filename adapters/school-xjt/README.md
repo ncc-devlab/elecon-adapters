@@ -1,11 +1,15 @@
 # school-xjt（西安交通大学）— fetch 模式 adapter（Track A spike）
 
-**首个 fetch 模式 adapter。状态：已通过本地夹具回放端到端 smoke。**
+**首个 fetch 模式 adapter。状态：可复现验证通过，但尚未进入正式签名发布流程（spike）。**
 
 - **数据**：教务处公开通知 `notice.list`。
 - **为何 fetch 模式**：站点有 JS 反爬挑战（多步握手），需 `ctx.fetch` 自行发起。
 - **不碰学生凭证**：`credentials` 块为空，全程 passthrough；client_id/JSESSIONID 是 origin
   下发的反爬会话态，由 per-execution jar 管理、执行后即弃（不入凭证库）。
+- **慢车道审查**：合入或发布前需人工复核 `network.allow`、passthrough 与凭证域隔离、
+  `setEphemeralCookie` 的执行期限制，并确认反爬 token 不进入凭证库。
+- **生产化阻塞项**：`index.js` 当前仍硬编码 Chrome/Linux `browser_info`；需改成宿主受控、版本化
+  的浏览器信息策略后，才可进入核心签名发布。
 
 ## 运行与验证
 

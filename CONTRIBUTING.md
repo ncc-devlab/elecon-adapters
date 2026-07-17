@@ -31,6 +31,9 @@ cp -r vendor/adapters/_template/parser adapters/school-<你的学校id>
 # 5. 本地校验
 npm install          # 首次:装 vendored 校验器依赖
 npm run check        # = validate（manifest/schema…）+ scan（脱敏）
+
+# 可选：生成供核心审查的 unsigned bundle、gzip 和 digest（不签名）
+npm run bundle -- --adapter=school-<你的学校id>
 ```
 
 ## 硬性要求（CI 会拦）
@@ -39,7 +42,16 @@ npm run check        # = validate（manifest/schema…）+ scan（脱敏）
 - **越薄越好**：parser adapter 只解析,不联网、不持凭证、无副作用。
 - **🔒 夹具脱敏（红线 #1 / #8）**：**绝不提交真实学生数据**（身份证/手机号/学号/银行卡）**或凭证等价物**（session cookie / `ticket=` / `openid` / `SAMLResponse` / CAS 票据 `ST-`/`TGT-` …）。scanner 会拦截。抓包后务必用占位替换真实值（`example` / `test` / 全 0 等会被识别为占位）。
 - **`stdlibMin`**（可选）：若用到较新的 `elecon:html` API,声明 `runtime.stdlibMin`;不得高于 `vendor/adapters/_stdlib` 的版本。
+- **编译与越权**：`npm run check` 会编译每个 entry，拒绝非 `elecon:html` import，并拒绝 parser 的网络、凭证和动态执行 API。
+- **catalog**：catalog 由核心生成；若 PR 带有 `dist/catalog.json`，必须通过 vendored schema 和 capability registry 校验。
+- **bundle/digest**：公开仓只生成 unsigned 交接物。核心沙箱复审通过后，核心重算 digest、YubiKey 签名并更新 release ledger，再发布 catalog/CDN。
 
 ## 合并之后
 
-维护者在核心侧做二次审查（沙箱行为验证）→ 离线签名（YubiKey）→ 分发。**签名/分发不在本仓库,本仓库 CI 无任何签名能力**（ADR-018 §2.8 四信任域）。
+维护者在核心侧做二次审查（沙箱行为验证）→ 离线签名（YubiKey）→ release ledger/catalog → CDN 分发。签名前须确认 bundle 身份来自 envelope 内 manifest，且重算 digest 与 unsigned 交接物一致。**签名/分发不在本仓库，本仓库 CI 无任何签名能力**。
+
+## Fetch 慢车道
+
+`official + fetch` 不是普通 parser 快车道。除静态 CI 外，维护者必须人工审查 `network.allow`、passthrough
+与凭证域隔离、`setEphemeralCookie` 是否仅用于执行期反爬态，以及 token 不会进入凭证库。browser 指纹硬编码
+只能作为 spike，生产化前须改为宿主受控值或版本化策略，并重新跑核心 fetch 回放。
