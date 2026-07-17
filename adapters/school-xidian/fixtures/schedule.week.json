@@ -1,0 +1,25 @@
+{
+  "_note": "脱敏课表输出 fixture。真实 IDS cookie、学号和个人课程信息不得提交；核心 fetch smoke 使用 fake transport 验证凭证注入。",
+  "capability": "schedule.week",
+  "params": { "term": "2025-2026-2", "week": 3 },
+  "expected": {
+    "term": "2025-2026-2",
+    "week": 3,
+    "days": [
+      {
+        "dayOfWeek": 1,
+        "slots": [
+          {
+            "start": "1",
+            "end": "2",
+            "courseName": "示例课程",
+            "courseId": "COURSE-EXAMPLE",
+            "teacher": "示例教师",
+            "location": "示例教学楼",
+            "weeks": [1, 2, 3, 4]
+          }
+        ]
+      }
+    ]
+  }
+}

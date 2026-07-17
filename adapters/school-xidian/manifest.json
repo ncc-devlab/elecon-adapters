@@ -5,22 +5,38 @@
   "schoolId": "xidian",
   "displayName": "西安电子科技大学（教务处通知）",
   "trustTier": "official",
-  "mode": "parser",
+  "mode": "fetch",
   "runtime": { "engine": "quickjs", "entry": "index.js" },
   "network": {
-    "allow": ["https://jwc.xidian.edu.cn/*"]
+    "allow": [
+      "https://jwc.xidian.edu.cn/*",
+      "https://ids.xidian.edu.cn/authserver/*",
+      "https://ehall.xidian.edu.cn/*"
+    ]
+  },
+  "login": {
+    "url": "https://ids.xidian.edu.cn/authserver/login?service=https%3A%2F%2Fehall.xidian.edu.cn%2Fnew%2Findex.html",
+    "navigationAllow": [
+      "https://ids.xidian.edu.cn/authserver/*",
+      "https://ehall.xidian.edu.cn/*"
+    ],
+    "success": { "whenUrlMatches": ["https://ehall.xidian.edu.cn/new/*"] }
+  },
+  "credentials": {
+    "ehall-session": {
+      "scope": ["https://ehall.xidian.edu.cn/*"],
+      "type": "cookie"
+    }
   },
   "capabilities": [
     {
       "id": "notice.list",
-      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" },
-      "requests": [
-        {
-          "key": "page",
-          "method": "GET",
-          "url": "https://jwc.xidian.edu.cn/index.htm"
-        }
-      ]
+      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" }
+    },
+    {
+      "id": "schedule.week",
+      "emits": { "schema": "elecon.schedule.week", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.schedule.week", "schemaVersion": "1.0" }
     }
   ]
 }

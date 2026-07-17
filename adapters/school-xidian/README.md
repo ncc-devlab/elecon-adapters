@@ -1,11 +1,11 @@
-# school-xidian（西安电子科技大学）— parser 模式 adapter
+# school-xidian（西安电子科技大学）— fetch 模式 adapter
 
-**首个 parser 模式正式 adapter。状态：已端到端跑通**——QuickJS-wasm 沙箱对录制夹具产出等于 golden（`server npm run smoke:sandbox` 的 `testXidianNoticeList`）。
+**状态：公开通知已有 golden fixture；IDS 登录 + E-Hall 课表 fetch 正在接入核心凭据注入 smoke，尚未签名发布。**
 
 - **数据**：教务处公开通知 `notice.list`（emits `elecon.notice.list@1.1`）。
-- **为何 parser 模式**：`jwc.xidian.edu.cn` 通知页是纯静态 HTML，无 JS 反爬，核心代取并脱敏后传入原始响应，adapter 只做 HTML → 标准 schema 的纯解析（不网络、不持凭证，红线 #5）。
-- **域名白名单**：`https://jwc.xidian.edu.cn/*`（见 `manifest.json` `network.allow`）。
-- **XIDIAN 测试覆盖**：见 [`COVERAGE.md`](./COVERAGE.md)。目前只接入公开通知；成绩、课表、考试、一卡通和图书馆等需要登录收割或仍未稳定的能力暂不接入。
+- **登录数据**：IDS 登录后的 E-Hall `schedule.week`。
+- **登录边界**：核心 WebView 托管 IDS 登录；adapter 只声明 `ehall-session` cookie scope，不接触用户名、密码或 cookie 值。
+- **域名白名单**：教务处、IDS authserver 和 E-Hall（见 `manifest.json` `network.allow`）。
 
 ## 已知坑
 
@@ -19,14 +19,19 @@
 ## 运行与验证
 
 ```bash
-cd server
-npm run smoke:sandbox    # 含 testXidianNoticeList 回放
+npm install
+npm run check
+# 核心侧：cd ../elecon/server && npm run smoke:xidian-schedule
 ```
+
+核心 smoke 使用脱敏 fake transport，至少应断言 E-Hall 请求带有凭证 Cookie、adapter 收不到
+`Set-Cookie`，课表输出通过 `elecon.schedule.week` schema，执行结束后的 origin cookie 按
+`ehall-session` 规则收割。真实账号测试必须人工执行，不能放进 CI。
 
 ## 夹具
 
-`fixtures/` 放脱敏后的 notice.html 与期望 `notice.list.json`。脱敏要求见 `adapters/README.md` 与 tools PII scanner（`tools/src/scanner`）。
+`fixtures/` 放脱敏后的 notice 与 `schedule.week` 期望输出。脱敏要求见 `adapters/README.md` 与 tools PII scanner（`tools/src/scanner`）。
 
 ## 待办
 
-- `adapters_tests/XIDIAN/` 下已有 IDS 登录、E-Hall 成绩/课表/考试、一卡通、图书馆等逆向脚本；接入边界和跳过理由见 `COVERAGE.md`。接入需 WebView 登录收割（ADR-016）+ 凭证存储（ADR-012）+ capability schema/golden 就绪。
+- `adapters_tests/XIDIAN/` 下的 IDS 登录和 E-Hall 课表逆向已转为首个 fetch capability；滑块求解、用户名密码和真实登录仍由核心/人工流程负责。
