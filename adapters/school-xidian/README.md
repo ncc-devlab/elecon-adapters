@@ -1,9 +1,10 @@
 # school-xidian（西安电子科技大学）— fetch 模式 adapter
 
-**状态：公开通知已有 golden fixture；IDS 登录 + E-Hall 课表 fetch 正在接入核心凭据注入 smoke，尚未签名发布。**
+**状态：公开通知、课表和本科成绩已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
 
 - **数据**：教务处公开通知 `notice.list`（emits `elecon.notice.list@1.1`）。
 - **登录数据**：IDS 登录后的 E-Hall `schedule.week`。
+- **成绩数据**：登录后的 E-Hall 本科 `grades.list`；研究生平台跨域 SSO 暂不接入。
 - **登录边界**：核心 WebView 托管 IDS 登录；adapter 只声明 `ehall-session` cookie scope，不接触用户名、密码或 cookie 值。
 - **域名白名单**：教务处、IDS authserver 和 E-Hall（见 `manifest.json` `network.allow`）。
 

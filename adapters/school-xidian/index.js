@@ -43,6 +43,30 @@ export const capabilities = {
     }
     return { term, week, days: groupCourses(result.rows || [], week) };
   },
+
+  "grades.list": async (ctx, params) => {
+    await openApp(ctx, "4768574631264620");
+    const response = await postForm(ctx, `${SCHEDULE_APP}/jwapp/sys/cjcx/modules/cjcx/xscjcx.do`, {
+      "*json": "1",
+      querySetting: JSON.stringify({
+        name: "SFYX",
+        value: "1",
+        linkOpt: "and",
+        builder: "m_value_equal",
+      }),
+      "*order": "+XNXQDM,KCH,KXH",
+      pageSize: "1000",
+      pageNumber: "1",
+    });
+    const payload = await response.json();
+    const result = payload?.datas?.xscjcx;
+    if (!result || result.extParams?.code !== 1) {
+      throw new Error(`grades query failed: ${result?.extParams?.msg || "invalid response"}`);
+    }
+    const rows = result.rows || [];
+    const term = params?.term || String(rows[0]?.XNXQDM || "");
+    return { term, items: rows.filter((row) => !term || row.XNXQDM === term).map(mapGrade) };
+  },
 };
 
 function parseNoticeHtml(html) {
@@ -91,10 +115,40 @@ function extractDateStr(li) {
 }
 
 async function openScheduleApp(ctx) {
-  const response = await ctx.fetch(`${SCHEDULE_APP}/appShow?appId=${SCHEDULE_APP_ID}`);
+  await openApp(ctx, SCHEDULE_APP_ID);
+}
+
+async function openApp(ctx, appId) {
+  const response = await ctx.fetch(`${SCHEDULE_APP}/appShow?appId=${appId}`);
   if (!response.ok && response.status !== 302) {
     throw new Error(`schedule app open failed: HTTP ${response.status}`);
   }
+}
+
+function mapGrade(row) {
+  const rawScore = row.ZCJ;
+  const numericScore = Number(rawScore);
+  const score = Number.isFinite(numericScore) && String(rawScore).trim() !== ""
+    ? { kind: "numeric", value: numericScore, max: 100 }
+    : { kind: isPassFail(rawScore) ? "passfail" : "letter", value: String(rawScore ?? "") };
+  const classStatus = String(row.XGXKLBDM_DISPLAY || row.KCXZDM_DISPLAY || "");
+  return {
+    courseId: String(row.JXBID || row.KCH || ""),
+    courseName: String(row.XSKCM || ""),
+    credit: toNumber(row.XF),
+    score,
+    category: classStatus.includes("必修") ? "required" : classStatus.includes("选修") ? "elective" : "unknown",
+    status: row.CXCKDM_DISPLAY ? "provisional" : "final",
+  };
+}
+
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function isPassFail(value) {
+  return /合格|通过|不合格|未通过/.test(String(value || ""));
 }
 
 async function getCurrentTerm(ctx) {
