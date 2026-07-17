@@ -5,6 +5,7 @@
 - **数据**：教务处公开通知 `notice.list`（emits `elecon.notice.list@1.1`）。
 - **为何 parser 模式**：`jwc.xidian.edu.cn` 通知页是纯静态 HTML，无 JS 反爬，核心代取并脱敏后传入原始响应，adapter 只做 HTML → 标准 schema 的纯解析（不网络、不持凭证，红线 #5）。
 - **域名白名单**：`https://jwc.xidian.edu.cn/*`（见 `manifest.json` `network.allow`）。
+- **XIDIAN 测试覆盖**：见 [`COVERAGE.md`](./COVERAGE.md)。目前只接入公开通知；成绩、课表、考试、一卡通和图书馆等需要登录收割或仍未稳定的能力暂不接入。
 
 ## 已知坑
 
@@ -28,4 +29,4 @@ npm run smoke:sandbox    # 含 testXidianNoticeList 回放
 
 ## 待办
 
-- `adapters_tests/XIDIAN/` 下已有 IDS 登录、E-Hall 成绩/课表/考试、一卡通、图书馆等逆向脚本，但尚未封装为本 adapter 的 capability；接入需 WebView 登录收割（ADR-016）+ 凭证存储（ADR-012）就绪。
+- `adapters_tests/XIDIAN/` 下已有 IDS 登录、E-Hall 成绩/课表/考试、一卡通、图书馆等逆向脚本；接入边界和跳过理由见 `COVERAGE.md`。接入需 WebView 登录收割（ADR-016）+ 凭证存储（ADR-012）+ capability schema/golden 就绪。
