@@ -1,0 +1,64 @@
+{
+  "manifestVersion": "1.0",
+  "adapterId": "school-thu",
+  "adapterVersion": "0.1.0",
+  "schoolId": "thu",
+  "displayName": "清华大学",
+  "trustTier": "official",
+  "mode": "fetch",
+  "runtime": { "engine": "quickjs", "entry": "index.js" },
+  "network": {
+    "allow": [
+      "https://id.tsinghua.edu.cn/*",
+      "https://webvpn.tsinghua.edu.cn/*",
+      "https://app.cs.tsinghua.edu.cn/*",
+      "https://card.tsinghua.edu.cn/*"
+    ]
+  },
+  "login": {
+    "url": "https://id.tsinghua.edu.cn/f/login",
+    "navigationAllow": [
+      "https://id.tsinghua.edu.cn/*",
+      "https://webvpn.tsinghua.edu.cn/*",
+      "https://app.cs.tsinghua.edu.cn/*",
+      "https://card.tsinghua.edu.cn/*"
+    ],
+    "success": { "whenUrlMatches": ["https://webvpn.tsinghua.edu.cn/*"] }
+  },
+  "credentials": {
+    "webvpn-session": {
+      "scope": ["https://webvpn.tsinghua.edu.cn/*"],
+      "type": "cookie"
+    },
+    "card-session": {
+      "scope": ["https://card.tsinghua.edu.cn/*"],
+      "type": "cookie"
+    }
+  },
+  "capabilities": [
+    {
+      "id": "notice.list",
+      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" },
+      "params": { "schema": "elecon.params.notice.list", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "grades.list",
+      "emits": { "schema": "elecon.grades.list", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.grades.list", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "schedule.week",
+      "emits": { "schema": "elecon.schedule.week", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.schedule.week", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "card.balance",
+      "emits": { "schema": "elecon.card.balance", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "card.transactions",
+      "emits": { "schema": "elecon.card.transactions", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.card.transactions", "schemaVersion": "1.0" }
+    }
+  ]
+}

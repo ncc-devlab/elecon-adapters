@@ -22,7 +22,7 @@
 ```bash
 npm install
 npm run check
-# 核心侧：cd ../elecon/server && npm run smoke:xidian-schedule
+# 运行对应的课表回放 smoke
 ```
 
 核心 smoke 使用脱敏 fake transport，至少应断言 E-Hall 请求带有凭证 Cookie、adapter 收不到

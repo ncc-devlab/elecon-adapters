@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "elecon 社区 adapter 仓库。贡献者在此提交学校 adapter;CI 做静态校验(schema / 脱敏 / 凭证等价物)。签名与分发在私有核心侧(ADR-018)。",
+  "description": "elecon 社区 adapter 仓库。贡献者在此提交学校 adapter；CI 做静态校验、脱敏和凭证等价物检查。",
   "scripts": {
     "validate": "ELECON_ADAPTERS_ROOT=adapters tsx vendor/tools/src/validator/index.ts",
     "scan": "tsx vendor/tools/src/scanner/index.ts --path=adapters",

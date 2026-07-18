@@ -1,7 +1,7 @@
 name: adapter-ci
 
-# 公开 adapters 仓的静态闸门（ADR-018 §2.10 / §2.11）。
-# 这里不签名：bundle/digest、核心沙箱、YubiKey、release ledger 和 catalog 发布仍在核心侧。
+# 公开 adapters 仓的静态闸门。
+# 这里不签名：bundle/digest 复核、签名和 catalog 发布属于发布流程。
 
 on:
   pull_request:

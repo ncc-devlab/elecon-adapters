@@ -124,7 +124,7 @@ interface Contract {
 
 /**
  * 极简 semver 比较（仅 x.y.z 数字段）。**刻意自包含**——不依赖 `tools/src/signer`，
- * 因为签名工具属私有核心、不随镜像发布给公开 adapters 仓（ADR-018 §2.8 所有权），
+ * 签名工具不属于本仓库，因此这里只校验 unsigned bundle 的结构与策略，
  * validator 必须能在镜像后的公开仓独立运行。
  */
 function cmpSemver(a: string, b: string): number {
