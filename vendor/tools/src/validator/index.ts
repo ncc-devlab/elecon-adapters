@@ -124,7 +124,7 @@ interface Contract {
 
 /**
  * 极简 semver 比较（仅 x.y.z 数字段）。**刻意自包含**——不依赖 `tools/src/signer`，
- * 签名工具不属于本仓库，因此这里只校验 unsigned bundle 的结构与策略，
+ * 因为签名工具属私有核心、不随镜像发布给公开 adapters 仓（ADR-018 §2.8 所有权），
  * validator 必须能在镜像后的公开仓独立运行。
  */
 function cmpSemver(a: string, b: string): number {
@@ -265,6 +265,26 @@ export function checkManifest(
         level: "error",
         code: "C2_emits_mismatch",
         message: `capability '${cap.id}' 的 emits 与 registry 不符：manifest=${cap.emits?.schema}@${cap.emits?.schemaVersion}，registry=${reg.emits.schema}@${reg.emits.schemaVersion}`,
+      });
+    }
+    const declaredParams = cap.params;
+    const registeredParams = reg.params;
+    if (
+      registeredParams &&
+      declaredParams &&
+      (declaredParams.schema !== registeredParams.schema ||
+        declaredParams.schemaVersion !== registeredParams.schemaVersion)
+    ) {
+      findings.push({
+        level: "error",
+        code: "C2_params_mismatch",
+        message: `capability '${cap.id}' 的 params 与 registry 不符：manifest=${declaredParams?.schema ?? "<missing>"}@${declaredParams?.schemaVersion ?? "<missing>"}，registry=${registeredParams.schema}@${registeredParams.schemaVersion}`,
+      });
+    } else if (!registeredParams && declaredParams) {
+      findings.push({
+        level: "error",
+        code: "C2_unexpected_params",
+        message: `capability '${cap.id}' 未在 registry 声明 params，但 manifest 提供了 params`,
       });
     }
 
@@ -638,7 +658,10 @@ function checkFixtures(dir: string, manifest: Manifest, contract: Contract): Fin
 
   for (const file of readdirSync(fixturesDir)) {
     if (!file.endsWith(".json")) continue;
-    const fx = readJson<{ capability?: string; expected?: unknown }>(join(fixturesDir, file));
+    const fx = readJson<{ kind?: string; capability?: string; expected?: unknown }>(join(fixturesDir, file));
+    // fetch-replay fixture 的 expected 由 FakeTransport replay runner 断言；C5
+    // 只负责 parser 的静态 expected schema 校验，避免把两种 fixture 语义混为一谈。
+    if (fx.kind === "fetch-replay") continue;
     if (!fx.capability || fx.expected === undefined) {
       findings.push({
         level: "warn",
