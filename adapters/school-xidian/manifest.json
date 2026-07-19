@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.2.0",
+  "adapterVersion": "0.2.1",
   "schoolId": "xidian",
   "displayName": "西安电子科技大学（教务处通知）",
   "trustTier": "official",
@@ -31,7 +31,8 @@
   "capabilities": [
     {
       "id": "notice.list",
-      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" }
+      "emits": { "schema": "elecon.notice.list", "schemaVersion": "1.1" },
+      "params": { "schema": "elecon.params.notice.list", "schemaVersion": "1.0" }
     },
     {
       "id": "schedule.week",
