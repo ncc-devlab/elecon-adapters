@@ -1,0 +1,21 @@
+{
+  "_note": "脱敏考试输出 fixture。字段来自本科 wdksap 行；真实 cookie/学号/姓名不得提交。",
+  "capability": "exam.list",
+  "params": { "term": "2025-2026-2" },
+  "expected": {
+    "term": "2025-2026-2",
+    "items": [
+      {
+        "courseId": "COURSE-EXAMPLE",
+        "courseName": "示例课程",
+        "examAt": "2026-06-20T09:00:00Z",
+        "campus": "示例校区",
+        "building": "示例教学楼",
+        "room": "A101",
+        "seat": "12",
+        "examType": "期末考试",
+        "status": "scheduled"
+      }
+    ]
+  }
+}

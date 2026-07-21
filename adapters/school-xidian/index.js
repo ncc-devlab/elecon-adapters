@@ -17,6 +17,13 @@ import {
 const ORIGIN = "https://jwc.xidian.edu.cn";
 const SCHEDULE_APP = "https://ehall.xidian.edu.cn";
 const SCHEDULE_APP_ID = "4770397878132218";
+const GRADES_APP_ID = "4768574631264620";
+const EXAM_APP_ID = "4768687067472349";
+
+// 本科 KSSJMS：`2025-06-20 09:00-11:00`（偶见 `::`）；研究生：`2025-06-20 周四(09:00-11:00)`
+const EXAM_TIME_UG = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2})::?(\d{2})-(\d{2})::?(\d{2})/;
+const EXAM_TIME_PG =
+  /^(\d{4})-(\d{2})-(\d{2})\s+.{1,4}\((\d{2})::?(\d{2})-(\d{2})::?(\d{2})\)/;
 
 export const capabilities = {
   "notice.list": async (ctx, _params, responses) => {
@@ -45,7 +52,7 @@ export const capabilities = {
   },
 
   "grades.list": async (ctx, params) => {
-    await openApp(ctx, "4768574631264620");
+    await openApp(ctx, GRADES_APP_ID);
     const response = await postForm(ctx, `${SCHEDULE_APP}/jwapp/sys/cjcx/modules/cjcx/xscjcx.do`, {
       "*json": "1",
       querySetting: JSON.stringify({
@@ -66,6 +73,27 @@ export const capabilities = {
     const rows = result.rows || [];
     const term = params?.term || String(rows[0]?.XNXQDM || "");
     return { term, items: rows.filter((row) => !term || row.XNXQDM === term).map(mapGrade) };
+  },
+
+  "exam.list": async (ctx, params) => {
+    const term = params?.term || (await getCurrentTerm(ctx));
+    await openApp(ctx, EXAM_APP_ID);
+    const response = await postForm(
+      ctx,
+      `${SCHEDULE_APP}/jwapp/sys/studentWdksapApp/modules/wdksap/wdksap.do`,
+      {
+        XNXQDM: term,
+        pageSize: "100",
+        pageNumber: "1",
+        "*order": "-KSRQ,-KSSJMS",
+      },
+    );
+    const payload = await response.json();
+    const result = payload?.datas?.wdksap;
+    if (!result || result.extParams?.code !== 1) {
+      throw new Error(`exam query failed: ${result?.extParams?.msg || "invalid response"}`);
+    }
+    return { term, items: (result.rows || []).map(mapExam) };
   },
 };
 
@@ -121,7 +149,7 @@ async function openScheduleApp(ctx) {
 async function openApp(ctx, appId) {
   const response = await ctx.fetch(`${SCHEDULE_APP}/appShow?appId=${appId}`);
   if (!response.ok && response.status !== 302) {
-    throw new Error(`schedule app open failed: HTTP ${response.status}`);
+    throw new Error(`app open failed: HTTP ${response.status}`);
   }
 }
 
@@ -140,6 +168,38 @@ function mapGrade(row) {
     category: classStatus.includes("必修") ? "required" : classStatus.includes("选修") ? "elective" : "unknown",
     status: row.CXCKDM_DISPLAY ? "provisional" : "final",
   };
+}
+
+function mapExam(row) {
+  const examAt = parseExamAt(row.KSSJMS);
+  const item = {
+    courseName: String(row.KCM ?? ""),
+    status: examAt ? "scheduled" : "unknown",
+  };
+  const courseId = String(row.KCH || row.JXBID || "").trim();
+  if (courseId) item.courseId = courseId;
+  if (examAt) item.examAt = examAt;
+  const campus = String(row.XXXQMC ?? "").trim();
+  if (campus) item.campus = campus;
+  const building = String(row.JXLMC ?? "").trim();
+  if (building) item.building = building;
+  const room = String(row.JASMC ?? "").trim();
+  if (room) item.room = room;
+  const seat = String(row.ZWH ?? "").trim();
+  if (seat) item.seat = seat;
+  const examType = String(row.KSMC ?? "").trim();
+  if (examType) item.examType = examType;
+  return item;
+}
+
+/** KSSJMS → RFC3339 UTC（与 notice 一致：本地墙钟按 Z 产出，不转 +08:00）。 */
+function parseExamAt(value) {
+  const text = String(value || "").trim();
+  if (!text || /cancel|取消|未知/.test(text)) return null;
+  const match = text.match(EXAM_TIME_UG) || text.match(EXAM_TIME_PG);
+  if (!match) return null;
+  const [, y, mo, d, h, mi] = match;
+  return `${y}-${mo}-${d}T${h}:${mi}:00Z`;
 }
 
 function toNumber(value) {

@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.2.2",
+  "adapterVersion": "0.3.0",
   "schoolId": "xidian",
   "displayName": "西安电子科技大学",
   "trustTier": "official",
@@ -43,6 +43,11 @@
       "id": "grades.list",
       "emits": { "schema": "elecon.grades.list", "schemaVersion": "1.0" },
       "params": { "schema": "elecon.params.grades.list", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "exam.list",
+      "emits": { "schema": "elecon.exam.list", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.exam.list", "schemaVersion": "1.0" }
     }
   ]
 }

@@ -8,7 +8,7 @@
 | `jwc/` 教务处通知 | 已接入 `notice.list` | 公开数据、脱敏 fixture；保留核心旧 golden 兼容入口 |
 | `ehall/schedule.py` | 已接入 `schedule.week` | E-Hall cookie 注入 + schema smoke；`SKZC` 单双周/多段已解析 |
 | `ehall/scores.py` | 已接入 `grades.list`（本科） | 同上；研究生成绩仍待单独 SSO 审查 |
-| `ehall/exams.py` | 待接入 | 核心已有 `exam.list` schema + registry；下一 capability 候选 |
+| `ehall/exams.py` | 已接入 `exam.list`（本科） | E-Hall `wdksap` + `KSSJMS` 时间解析；核心 `smoke:xidian-exams` |
 | `ehall/session.py` | 不作为 capability | 共享登录/应用跳转由核心登录与凭证层托管 |
 | `card/balance.py` | 跳过 | OAuth `openid` 是敏感会话产物，接口返回字段不稳定 |
 | `library/borrow.py` | 跳过 | CAS 响应 body 产生 `userId/token`，需明确 ephemeral/凭证边界 |
