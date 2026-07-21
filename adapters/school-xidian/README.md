@@ -41,3 +41,4 @@ cd ../elecon/server && npm run smoke:xidian-schedule && npm run smoke:xidian-gra
 ## 待办
 
 - 滑块求解、用户名密码和真实登录仍由核心/人工流程负责，不得复制进 adapter。
+- **候选扩展**（card / classroom / library / energy）：字段映射、schema 缺口与**人工审阅清单**见 [`COVERAGE.md`](./COVERAGE.md)。当前 milestone 不接 energy；classroom 先扩 contract；card 依赖核心 openid 裁定。
