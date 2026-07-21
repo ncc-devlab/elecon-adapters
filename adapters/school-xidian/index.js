@@ -201,11 +201,49 @@ function groupCourses(rows, week) {
 }
 
 function parseWeeks(value) {
-  const numbers = String(value || "").match(/\d+/g) || [];
-  if (numbers.length < 2) return numbers.map(Number);
-  const start = Number(numbers[0]);
-  const end = Number(numbers[1]);
-  const weeks = [];
-  for (let week = start; week <= end; week += 1) weeks.push(week);
-  return weeks;
+  const text = String(value || "").trim();
+  if (!text) return [];
+
+  const globalOdd = /单周|[（(]单[)）]|奇数周/.test(text);
+  const globalEven = /双周|[（(]双[)）]|偶数周/.test(text);
+  // 单双互斥时以「单」优先，避免脏字符串两边都命中。
+  const forceOdd = globalOdd && !globalEven ? true : globalOdd && globalEven ? true : false;
+  const forceEven = globalEven && !globalOdd;
+
+  const weeks = new Set();
+  const segments = text.split(/[,，、;；]/).map((s) => s.trim()).filter(Boolean);
+
+  for (const segment of segments) {
+    const segOdd = forceOdd || /单周|[（(]单[)）]/.test(segment);
+    const segEven = forceEven || /双周|[（(]双[)）]/.test(segment);
+    const parity = segOdd && !segEven ? "odd" : segEven && !segOdd ? "even" : "all";
+
+    let matchedRange = false;
+    const rangeRe = /(\d+)\s*[-~～至到]\s*(\d+)/g;
+    let match;
+    while ((match = rangeRe.exec(segment)) !== null) {
+      matchedRange = true;
+      const start = Number(match[1]);
+      const end = Number(match[2]);
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start) continue;
+      const last = Math.min(end, 32);
+      for (let week = start; week <= last; week += 1) {
+        if (parity === "odd" && week % 2 === 0) continue;
+        if (parity === "even" && week % 2 === 1) continue;
+        weeks.add(week);
+      }
+    }
+
+    if (!matchedRange) {
+      for (const raw of segment.match(/\d+/g) || []) {
+        const week = Number(raw);
+        if (!Number.isInteger(week) || week < 1 || week > 32) continue;
+        if (parity === "odd" && week % 2 === 0) continue;
+        if (parity === "even" && week % 2 === 1) continue;
+        weeks.add(week);
+      }
+    }
+  }
+
+  return [...weeks].sort((a, b) => a - b);
 }

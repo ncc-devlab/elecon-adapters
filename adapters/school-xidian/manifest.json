@@ -1,23 +1,23 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.2.1",
+  "adapterVersion": "0.2.2",
   "schoolId": "xidian",
-  "displayName": "西安电子科技大学（教务处通知）",
+  "displayName": "西安电子科技大学",
   "trustTier": "official",
   "mode": "fetch",
   "runtime": { "engine": "quickjs", "entry": "index.js" },
   "network": {
     "allow": [
       "https://jwc.xidian.edu.cn/*",
-      "https://ids.xidian.edu.cn/authserver/*",
+      "https://ids.xidian.edu.cn/*",
       "https://ehall.xidian.edu.cn/*"
     ]
   },
   "login": {
     "url": "https://ids.xidian.edu.cn/authserver/login?service=https%3A%2F%2Fehall.xidian.edu.cn%2Fnew%2Findex.html",
     "navigationAllow": [
-      "https://ids.xidian.edu.cn/authserver/*",
+      "https://ids.xidian.edu.cn/*",
       "https://ehall.xidian.edu.cn/*"
     ],
     "success": { "whenUrlMatches": ["https://ehall.xidian.edu.cn/new/*"] }

@@ -6,12 +6,12 @@
 | 来源测试 | 当前状态 | 原因 |
 |---|---|---|
 | `jwc/` 教务处通知 | 已接入 `notice.list` | 公开数据、脱敏 fixture；保留核心旧 golden 兼容入口 |
-| `ehall/schedule.py` | 已接入 `schedule.week` | 使用 IDS WebView 登录后的 E-Hall cookie；核心 fake transport 已验证注入和 schema |
-| `ehall/scores.py` | 已接入 `grades.list`（本科） | E-Hall cookie 注入和 schema 已有核心 fake transport smoke；研究生成绩仍待单独 SSO 审查 |
-| `ehall/exams.py` | 跳过 | 当前 registry 没有考试 capability，需先确定公共 schema 和 ADR 变更 |
-| `ehall/session.py` | 不作为 capability | 共享登录/应用跳转流程由核心登录与凭证层托管 |
+| `ehall/schedule.py` | 已接入 `schedule.week` | E-Hall cookie 注入 + schema smoke；`SKZC` 单双周/多段已解析 |
+| `ehall/scores.py` | 已接入 `grades.list`（本科） | 同上；研究生成绩仍待单独 SSO 审查 |
+| `ehall/exams.py` | 待接入 | 核心已有 `exam.list` schema + registry；下一 capability 候选 |
+| `ehall/session.py` | 不作为 capability | 共享登录/应用跳转由核心登录与凭证层托管 |
 | `card/balance.py` | 跳过 | OAuth `openid` 是敏感会话产物，接口返回字段不稳定 |
-| `library/borrow.py` | 跳过 | CAS 响应 body 产生 `userId/token`，需要明确 ephemeral/凭证边界和借阅日期映射 |
+| `library/borrow.py` | 跳过 | CAS 响应 body 产生 `userId/token`，需明确 ephemeral/凭证边界 |
 | `energy/meter.py` | 跳过 | 尚无 registry/schema/脱敏 fixture |
 
 ## 接入顺序

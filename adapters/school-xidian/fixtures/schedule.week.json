@@ -1,5 +1,5 @@
 {
-  "_note": "脱敏课表输出 fixture。真实 IDS cookie、学号和个人课程信息不得提交；核心 fetch smoke 使用 fake transport 验证凭证注入。",
+  "_note": "脱敏课表输出 fixture。覆盖 1-4 周连续段（week=3 命中）。单双周/多段由核心 smoke 用 fake transport 覆盖；真实 IDS cookie 与个人课程不得提交。",
   "capability": "schedule.week",
   "params": { "term": "2025-2026-2", "week": 3 },
   "expected": {
