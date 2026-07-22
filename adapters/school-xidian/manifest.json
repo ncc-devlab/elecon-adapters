@@ -48,6 +48,16 @@
       "id": "exam.list",
       "emits": { "schema": "elecon.exam.list", "schemaVersion": "1.0" },
       "params": { "schema": "elecon.params.exam.list", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "classroom.buildings",
+      "emits": { "schema": "elecon.classroom.buildings", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.classroom.buildings", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "classroom.available",
+      "emits": { "schema": "elecon.classroom.available", "schemaVersion": "1.1" },
+      "params": { "schema": "elecon.params.classroom.available", "schemaVersion": "1.1" }
     }
   ]
 }
