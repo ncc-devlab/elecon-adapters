@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = new URL("../adapters/", import.meta.url).pathname;
-const forbiddenParser = /\b(fetch|setEphemeralCookie|credentials|eval|Function|globalThis|process)\b/;
+const forbiddenDeclarative = /\b(fetch|setEphemeralCookie|credentials|eval|Function|globalThis|process)\b/;
 const importPattern = /(?:import\s+(?:[\s\S]*?\s+from\s+)?|import\s*\()(['"])(.*?)\1/g;
 
 for (const adapterId of readdirSync(root)) {
@@ -17,8 +17,11 @@ for (const adapterId of readdirSync(root)) {
     }
   }
   const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
-  if (manifest.mode === "parser" && forbiddenParser.test(code)) {
-    throw new Error(`${adapterId}: parser 包含网络、凭证或动态执行 API（AST/源码越权闸门）`);
+  const hasDeclarativeCapability = manifest.capabilities.some(
+    (capability) => capability.requestGraph === "declarative",
+  );
+  if (hasDeclarativeCapability && forbiddenDeclarative.test(code)) {
+    throw new Error(`${adapterId}: declarative capability 包含网络、凭证或动态执行 API（AST/源码越权闸门）`);
   }
 
   await build({

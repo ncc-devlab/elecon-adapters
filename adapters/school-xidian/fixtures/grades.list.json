@@ -1,5 +1,5 @@
 {
-  "_note": "脱敏成绩输出 fixture。真实学号、姓名、成绩和 IDS cookie 不得提交；核心 fetch smoke 使用 fake transport。",
+  "_note": "脱敏成绩输出 fixture。真实学号、姓名、成绩和 IDS cookie 不得提交；核心 imperative smoke 使用 fake transport。",
   "capability": "grades.list",
   "params": { "term": "2025-2026-2" },
   "expected": {

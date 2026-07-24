@@ -1,5 +1,5 @@
 /**
- * school-xidian（西安电子科技大学）fetch adapter。
+ * school-xidian（西安电子科技大学）imperative adapter。
  *
  * IDS 登录由核心托管 WebView 完成。adapter 不接触用户名/密码，只通过 manifest 中的
  * credentials 引用让 Broker 注入 E-Hall cookie；真实账号、cookie 和登录响应不得入库。
@@ -30,7 +30,7 @@ const EXAM_TIME_PG =
 
 export const capabilities = {
   "notice.list": async (ctx, _params, responses) => {
-    // 保留核心旧 golden 的离线 responses 入口；正式 fetch 运行走 ctx.fetch。
+    // 保留核心旧 golden 的离线 responses 入口；正式 imperative 运行走 ctx.fetch。
     if (responses?.page?.body) return parseNoticeHtml(responses.page.body);
     const response = await ctx.fetch(`${ORIGIN}/index.htm`);
     return parseNoticeHtml(await response.text());

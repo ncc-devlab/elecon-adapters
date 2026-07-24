@@ -1,5 +1,5 @@
 /**
- * school-fudan（复旦大学）公开通知 fetch adapter。
+ * school-fudan（复旦大学）公开通知 imperative adapter。
  *
  * 当前只接入本科生院公开通知；教务系统、研究生系统和生活服务需要另行完成
  * IDS/统一认证、凭证作用域与 contract 审查，不在此 capability 中隐式访问。

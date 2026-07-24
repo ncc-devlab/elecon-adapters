@@ -1,4 +1,4 @@
-# school-fudan（复旦大学）— fetch 模式 adapter
+# school-fudan（复旦大学）— imperative requestGraph adapter
 
 **状态：本科生院公开通知已接入，尚未签名发布。**
 

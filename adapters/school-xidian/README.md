@@ -1,4 +1,4 @@
-# school-xidian（西安电子科技大学）— fetch 模式 adapter
+# school-xidian（西安电子科技大学）— imperative requestGraph adapter
 
 **状态：公开通知、课表、本科成绩/考试/空教室已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
 
