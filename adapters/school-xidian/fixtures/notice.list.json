@@ -1,5 +1,5 @@
 {
-  "_note": "脱敏夹具（红线 #8）：所有 URL/日期/标题均为虚构或公开数据。golden 测试：以 params + responses 跑 parser adapter，产出须逐字段等于 expected。",
+  "_note": "脱敏夹具（红线 #8）：所有 URL/日期/标题均为虚构或公开数据。golden 测试：以 params + responses 跑 adapter，产出须逐字段等于 expected。",
   "capability": "notice.list",
   "params": {},
   "responses": {

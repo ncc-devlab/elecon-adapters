@@ -18,6 +18,7 @@
 | `ehall/schedule.py` | `schedule.week` | 已接入 | `ehall-session` + smoke |
 | `ehall/scores.py` | `grades.list` | 已接入（本科） | 研究生成绩跨域 SSO 不接 |
 | `ehall/exams.py` | `exam.list` | 已接入（本科） | `smoke:xidian-exams` |
+| `ehall/empty_classroom.py` | `classroom.buildings` / `classroom.available` | 已接入（本科） | ADR-019；`smoke:xidian-classroom` |
 | `ehall/session.py` | — | 非 capability | 登录 / useApp 由核心托管 |
 
 ---
@@ -27,7 +28,6 @@
 | 来源测试 | Capability | 优先级 | 一句话结论 |
 |---|---|---|---|
 | `card/balance.py` | `card.balance` / `card.transactions` | P1（核心裁定后） | 流水 JSON 可用；余额 HTML 脆；**openid 阻塞** |
-| `ehall/empty_classroom.py` | `classroom.available` | P2（先扩 schema） | E-Hall 同 exam 路径；**params/语义不对齐** |
 | `library/borrow.py` | `library.loans` | P2–P3 | 字段映射干净；CAS/`openId`/双域待真机校准 |
 | `energy/meter.py` | `energy.usage` | 冻结 | 校园网 + AES/sign；不进当前 milestone |
 
@@ -35,7 +35,6 @@
 
 | 能力 | 倍数 | 主成本在 |
 |---|---|---|
-| `classroom.available` | ~0.5–1× | contract params / 空闲语义 |
 | `library.loans` | ~2–3× | 新域 mint + 真机校准 |
 | `card.*` | ~3–5× | openid 凭证模型 + 余额 HTML |
 | `energy.usage` | ~5–10× | 校园网 + 每请求签名 |
@@ -105,61 +104,36 @@ credentials.card-session = { scope: ["https://v8scan.xidian.edu.cn/*"], type: co
 
 ---
 
-## 2. `classroom.available`
+## 2. `classroom.buildings` / `classroom.available` ✅
 
+**状态：** 已实现（契约 ADR-019；adapter `0.3.0+`）  
 **探针：** `adapters_tests/XIDIAN/ehall/empty_classroom.py`  
 **AppId：** `4768402106681759`  
 **凭证：** 复用 `ehall-session`（与 grades/schedule/exam 相同）
 
 | 接口 | 作用 |
 |---|---|
-| `.../kxjas/modules/kxjas/jxlcx.do` | 教学楼列表 → `JXLDM` / `JXLJC` |
+| `.../kxjas/modules/kxjas/jxlcx.do` | 教学楼列表 → `classroom.buildings`（`JXLDM`/`JXLJC`/`XXXQMC`） |
 | `.../rqzhzcjc.do` | 日期 → 周次 `ZC` + 星期 `XQJ` |
-| `.../cxjsqk.do` | 教室占用；`JC1`–`JC11` 含 `"1_"` 表示占用 |
+| `.../cxjsqk.do` | 教室占用；`JC1`–`JC11` 含 `"1_"` → `sections[]` |
 
-### 2.1 期望 params 扩展（**contract 未满足，需 ADR**）
+### 2.1 已落地 params / emits（ADR-019）
 
-现有 `elecon.params.classroom.available`：`date`, `start`, `end`, `campus`
+- **`classroom.buildings`**：discovery；可选 `campus` 过滤
+- **`classroom.available`**：`date` 必填；`buildingId` 或 `building` 二选一；`term` 可选（缺省走 `dqxnxq`）；`sectionStart`/`sectionEnd` 节次窗口；可选 `onlyAvailable` / `room` / `roomId`
+- **emits**：`items[].sections[{index,occupied,label?}]`（西电 11 节）；`status`/`occupied` 按窗口聚合（§2.5）
 
-| 字段 | 现状 | 期望 |
-|---|---|---|
-| `date` | 有 | **必填**；`yyyy-MM-dd` |
-| `building` | **无** | **必填或强推荐**；教学楼 code（`JXLDM`）或可解析名称 |
-| `term` / `semester` | **无** | 学年学期，如 `2024-2025-2` 或拆 `XN`+`XQ`；缺省时由 adapter 调「当前学期」接口（需声明） |
-| `start` / `end` | 有（墙钟或未定义） | 明确语义：节次（1–11）**或** HH:mm + **校历节次时刻表**；无表则文档写死「仅按日、忽略时刻」 |
-| `campus` | 有 | 可选过滤；XIDIAN 首版可忽略 |
+### 2.2 Manifest / 测试
 
-### 2.2 期望 emits 映射
+- capability 已声明；`network.allow` / `ehall-session` 未改
+- fixture：`fixtures/classroom.buildings.json`、`fixtures/classroom.available.json`
+- 核心 smoke：`server` → `npm run smoke:xidian-classroom`
 
-现有 `elecon.classroom.available`：`items[]` 必填 `building`, `room`
+### 2.3 残留（非阻塞）
 
-| 目标字段 | 探针来源 | 备注 |
-|---|---|---|
-| `date` | 入参回显 | |
-| `building` | 教学楼名 `JXLJC` 或 code | 与 params 一致 |
-| `room` | `JASMC` | |
-| `occupied` / `status` | 由 `JC1`–`JC11` 与 start/end 推导 | `available` / `occupied` / `unknown` |
-| `capacity` / `equipment` / `campus` | 可选 | 探针无则省略 |
-| 全日占用明细 | **schema 无节次数组** | 若产品要「每节空闲」，需扩 schema（如 `sections: boolean[11]`）或只做聚合状态 |
-
-**产品语义待拍板（三选一或组合）：**
-
-1. 返回指定楼指定日**全部教室** + 每间 `occupied`（至少一节有课 vs 全天空）  
-2. 仅返回在 `start`–`end` 内**空闲**的教室  
-3. 扩展 emits 携带 `sections[11]`，客户端自己算  
-
-### 2.3 Manifest
-
-`network.allow` / `ehall-session` **基本已够**；仅增 capability 声明 + fixture/smoke。
-
-### 2.4 人工审阅清单（classroom）
-
-- [ ] **params ADR**：是否增加 `building`、`term`；`start`/`end` 语义
-- [ ] 无 `building` 时是否禁止「扫全校」默认（性能/滥用）
-- [ ] 学期缺省策略与 `get_current_semester` 类接口是否允许
-- [ ] 研究生是否同 App（首版建议仅本科 E-Hall，与 exam 一致）
-- [ ] 脱敏 fixture + 仿 `smoke:xidian-exams` 的核心 smoke
-- [ ] 正式发布前 schemaVersion 与 catalog 对齐
+- [ ] 真机对照 `JASMC`/`JASDM`/`LC` 字段稳定性
+- [ ] 研究生是否同 App（首版仅本科 E-Hall，与 exam 一致）
+- [ ] UI 节次选择器对接（宿主侧）
 
 ---
 
