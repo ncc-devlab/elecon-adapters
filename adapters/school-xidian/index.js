@@ -19,6 +19,9 @@ const SCHEDULE_APP = "https://ehall.xidian.edu.cn";
 const SCHEDULE_APP_ID = "4770397878132218";
 const GRADES_APP_ID = "4768574631264620";
 const EXAM_APP_ID = "4768687067472349";
+const CLASSROOM_APP_ID = "4768402106681759";
+const CLASSROOM_BASE = `${SCHEDULE_APP}/jwapp/sys/kxjas/modules/kxjas`;
+const CLASSROOM_SECTION_COUNT = 11;
 
 // 本科 KSSJMS：`2025-06-20 09:00-11:00`（偶见 `::`）；研究生：`2025-06-20 周四(09:00-11:00)`
 const EXAM_TIME_UG = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2})::?(\d{2})-(\d{2})::?(\d{2})/;
@@ -94,6 +97,105 @@ export const capabilities = {
       throw new Error(`exam query failed: ${result?.extParams?.msg || "invalid response"}`);
     }
     return { term, items: (result.rows || []).map(mapExam) };
+  },
+
+  "classroom.buildings": async (ctx, params) => {
+    await openApp(ctx, CLASSROOM_APP_ID);
+    const buildings = await fetchBuildingList(ctx);
+    let items = buildings;
+    const campus = asNonEmptyString(params?.campus);
+    if (campus) {
+      items = items.filter(
+        (b) => b.campus === campus || b.building.includes(campus) || b.buildingId.includes(campus),
+      );
+    }
+    const out = { items };
+    if (campus) out.campus = campus;
+    if (asNonEmptyString(params?.term)) out.term = params.term;
+    return out;
+  },
+
+  "classroom.available": async (ctx, params) => {
+    const date = asNonEmptyString(params?.date);
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new Error("classroom.available: params.date 必须是 YYYY-MM-DD");
+    }
+    const buildingIdParam = asNonEmptyString(params?.buildingId);
+    const buildingNameParam = asNonEmptyString(params?.building);
+    if (!buildingIdParam && !buildingNameParam) {
+      throw new Error("classroom.available: 需要 params.buildingId 或 params.building");
+    }
+
+    const term = asNonEmptyString(params?.term) || (await getCurrentTerm(ctx));
+    const { semesterRange, semesterPart } = splitTerm(term);
+    await openApp(ctx, CLASSROOM_APP_ID);
+
+    const buildings = await fetchBuildingList(ctx);
+    const building = resolveBuilding(buildings, buildingIdParam, buildingNameParam);
+    if (!building) {
+      throw new Error(
+        `classroom.available: 未找到教学楼 buildingId=${buildingIdParam || ""} building=${buildingNameParam || ""}`,
+      );
+    }
+
+    const { week, weekday } = await dateToWeekWeekday(ctx, date, semesterRange, semesterPart);
+    const response = await postForm(ctx, `${CLASSROOM_BASE}/cxjsqk.do`, {
+      XNXQDM: term,
+      ZC: String(week),
+      XQ: String(weekday),
+      querySetting: JSON.stringify([
+        {
+          name: "JXLDM",
+          caption: "教学楼代码",
+          builder: "equal",
+          linkOpt: "AND",
+          value: building.buildingId,
+        },
+        { name: "XNXQDM", value: term, linkOpt: "AND", builder: "equal" },
+        { name: "ZC", value: week, linkOpt: "AND", builder: "equal" },
+        { name: "ZC", value: weekday, linkOpt: "AND", builder: "equal" },
+      ]),
+      "*order": "+LC,+JASMC",
+      pageSize: "999",
+      pageNumber: "1",
+    });
+    const payload = await response.json();
+    const result = payload?.datas?.cxjsqk;
+    if (!result) {
+      throw new Error("classroom query failed: invalid response");
+    }
+
+    const sectionStart = normalizeSectionBound(params?.sectionStart, 1);
+    const sectionEnd = normalizeSectionBound(params?.sectionEnd, CLASSROOM_SECTION_COUNT);
+    if (sectionStart > sectionEnd) {
+      throw new Error("classroom.available: sectionStart 不得大于 sectionEnd");
+    }
+    const onlyAvailable = params?.onlyAvailable === true;
+    const roomFilter = asNonEmptyString(params?.room);
+    const roomIdFilter = asNonEmptyString(params?.roomId);
+
+    let items = (result.rows || []).map((row) =>
+      mapClassroomRow(row, building, sectionStart, sectionEnd),
+    );
+    if (roomIdFilter) {
+      items = items.filter((item) => item.roomId === roomIdFilter);
+    } else if (roomFilter) {
+      items = items.filter((item) => item.room.includes(roomFilter));
+    }
+    if (onlyAvailable) {
+      items = items.filter((item) => item.status === "available");
+    }
+
+    const out = {
+      date,
+      term,
+      week,
+      weekday,
+      sectionStart,
+      sectionEnd,
+      items,
+    };
+    return out;
   },
 };
 
@@ -189,6 +291,122 @@ function mapExam(row) {
   if (seat) item.seat = seat;
   const examType = String(row.KSMC ?? "").trim();
   if (examType) item.examType = examType;
+  return item;
+}
+
+function asNonEmptyString(value) {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function splitTerm(term) {
+  const m = String(term).match(/^(\d{4}-\d{4})-([12])$/);
+  if (!m) {
+    throw new Error(`classroom: 无法解析学期 term=${term}（期望如 2025-2026-2）`);
+  }
+  return { semesterRange: m[1], semesterPart: m[2] };
+}
+
+function normalizeSectionBound(value, fallback) {
+  if (value == null || value === "") return fallback;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 24) {
+    throw new Error(`classroom.available: 节次须为 1–24 的整数，收到 ${value}`);
+  }
+  return n;
+}
+
+async function fetchBuildingList(ctx) {
+  const response = await postForm(ctx, `${CLASSROOM_BASE}/jxlcx.do`, {
+    "*order": "+XXXQDM,+PX,+JXLDM",
+  });
+  const payload = await response.json();
+  const rows = payload?.datas?.jxlcx?.rows;
+  if (!Array.isArray(rows)) {
+    throw new Error("classroom.buildings: invalid response");
+  }
+  return rows.map((row) => {
+    const buildingId = asNonEmptyString(row.JXLDM) || "-";
+    const building = asNonEmptyString(row.JXLJC) || asNonEmptyString(row.JXLMC) || "-";
+    const item = { building, buildingId };
+    const campus = asNonEmptyString(row.XXXQMC) || asNonEmptyString(row.XXXQDM);
+    if (campus) item.campus = campus;
+    return item;
+  });
+}
+
+function resolveBuilding(buildings, buildingId, buildingName) {
+  if (buildingId) {
+    const byId = buildings.find((b) => b.buildingId === buildingId);
+    if (byId) return byId;
+  }
+  if (buildingName) {
+    const exact = buildings.find((b) => b.building === buildingName);
+    if (exact) return exact;
+    const partial = buildings.find(
+      (b) => b.building.includes(buildingName) || buildingName.includes(b.building),
+    );
+    if (partial) return partial;
+  }
+  if (buildingId) {
+    return {
+      building: buildingName || buildingId,
+      buildingId,
+    };
+  }
+  return null;
+}
+
+async function dateToWeekWeekday(ctx, date, semesterRange, semesterPart) {
+  const response = await postForm(ctx, `${CLASSROOM_BASE}/rqzhzcjc.do`, {
+    RQ: date,
+    XN: semesterRange,
+    XQ: semesterPart,
+  });
+  const payload = await response.json();
+  const data = payload?.datas?.rqzhzcjc;
+  const week = Number(data?.ZC);
+  const weekday = Number(data?.XQJ);
+  if (!Number.isInteger(week) || week < 1 || !Number.isInteger(weekday) || weekday < 1 || weekday > 7) {
+    throw new Error(`classroom.available: 日期换算周次失败 date=${date}`);
+  }
+  return { week, weekday };
+}
+
+function mapClassroomRow(row, building, sectionStart, sectionEnd) {
+  const room = asNonEmptyString(row.JASMC) || "-";
+  const sections = [];
+  for (let i = 1; i <= CLASSROOM_SECTION_COUNT; i++) {
+    const raw = row[`JC${i}`];
+    sections.push({
+      index: i,
+      occupied: String(raw ?? "").includes("1_"),
+      label: `第${i}节`,
+    });
+  }
+
+  const window = sections.filter((s) => s.index >= sectionStart && s.index <= sectionEnd);
+  const anyOccupied = window.some((s) => s.occupied);
+  const allOccupied = window.length > 0 && window.every((s) => s.occupied);
+  const noneOccupied = window.length > 0 && window.every((s) => !s.occupied);
+  let status = "unknown";
+  if (noneOccupied) status = "available";
+  else if (allOccupied) status = "occupied";
+  else if (anyOccupied) status = "partial";
+
+  const item = {
+    building: building.building || "-",
+    buildingId: building.buildingId,
+    room,
+    occupied: anyOccupied,
+    status,
+    sections,
+  };
+  if (building.campus) item.campus = building.campus;
+  const roomId = asNonEmptyString(row.JASDM);
+  if (roomId) item.roomId = roomId;
+  const floor = asNonEmptyString(row.LC);
+  if (floor) item.floor = floor;
   return item;
 }
 

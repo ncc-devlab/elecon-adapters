@@ -1,0 +1,67 @@
+{
+  "_note": "脱敏空教室 fixture。字段来自本科 ehall kxjas cxjsqk（JC1–JC11）；真实 cookie/学号不得提交。",
+  "capability": "classroom.available",
+  "params": {
+    "date": "2026-03-16",
+    "term": "2025-2026-2",
+    "buildingId": "BLDG-A",
+    "sectionStart": 1,
+    "sectionEnd": 4
+  },
+  "expected": {
+    "date": "2026-03-16",
+    "term": "2025-2026-2",
+    "week": 5,
+    "weekday": 1,
+    "sectionStart": 1,
+    "sectionEnd": 4,
+    "items": [
+      {
+        "building": "示例教学楼A",
+        "buildingId": "BLDG-A",
+        "campus": "示例校区",
+        "room": "A101",
+        "roomId": "ROOM-A101",
+        "floor": "1",
+        "occupied": false,
+        "status": "available",
+        "sections": [
+          { "index": 1, "occupied": false, "label": "第1节" },
+          { "index": 2, "occupied": false, "label": "第2节" },
+          { "index": 3, "occupied": false, "label": "第3节" },
+          { "index": 4, "occupied": false, "label": "第4节" },
+          { "index": 5, "occupied": true, "label": "第5节" },
+          { "index": 6, "occupied": true, "label": "第6节" },
+          { "index": 7, "occupied": false, "label": "第7节" },
+          { "index": 8, "occupied": false, "label": "第8节" },
+          { "index": 9, "occupied": false, "label": "第9节" },
+          { "index": 10, "occupied": false, "label": "第10节" },
+          { "index": 11, "occupied": false, "label": "第11节" }
+        ]
+      },
+      {
+        "building": "示例教学楼A",
+        "buildingId": "BLDG-A",
+        "campus": "示例校区",
+        "room": "A102",
+        "roomId": "ROOM-A102",
+        "floor": "1",
+        "occupied": true,
+        "status": "partial",
+        "sections": [
+          { "index": 1, "occupied": true, "label": "第1节" },
+          { "index": 2, "occupied": true, "label": "第2节" },
+          { "index": 3, "occupied": false, "label": "第3节" },
+          { "index": 4, "occupied": false, "label": "第4节" },
+          { "index": 5, "occupied": false, "label": "第5节" },
+          { "index": 6, "occupied": false, "label": "第6节" },
+          { "index": 7, "occupied": false, "label": "第7节" },
+          { "index": 8, "occupied": false, "label": "第8节" },
+          { "index": 9, "occupied": false, "label": "第9节" },
+          { "index": 10, "occupied": false, "label": "第10节" },
+          { "index": 11, "occupied": false, "label": "第11节" }
+        ]
+      }
+    ]
+  }
+}

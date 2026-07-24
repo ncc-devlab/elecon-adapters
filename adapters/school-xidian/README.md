@@ -1,9 +1,9 @@
 # school-xidian（西安电子科技大学）— fetch 模式 adapter
 
-**状态：公开通知、课表、本科成绩与考试安排已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
+**状态：公开通知、课表、本科成绩/考试/空教室已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
 
 - **数据**：教务处公开通知 `notice.list`（emits `elecon.notice.list@1.1`）。
-- **登录数据**：IDS 登录后的 E-Hall `schedule.week`、本科 `grades.list`、`exam.list`。
+- **登录数据**：IDS 登录后的 E-Hall `schedule.week`、本科 `grades.list`、`exam.list`、`classroom.buildings` / `classroom.available`（ADR-019）。
 - **成绩边界**：研究生成绩平台跨域 SSO 暂不接入。
 - **登录边界**：核心 WebView 托管 IDS 登录；adapter 只声明 `ehall-session` cookie scope，不接触用户名、密码或 cookie 值。
 - **域名白名单**：教务处、IDS、E-Hall（见 `manifest.json` `network.allow`）。
@@ -28,17 +28,17 @@ npm run check
 npm run bundle -- --adapter=school-xidian
 
 # 核心仓（兄弟目录）凭据注入 smoke
-cd ../elecon/server && npm run smoke:xidian-schedule && npm run smoke:xidian-grades && npm run smoke:xidian-exams
+cd ../elecon/server && npm run smoke:xidian-schedule && npm run smoke:xidian-grades && npm run smoke:xidian-exams && npm run smoke:xidian-classroom
 ```
 
 核心 smoke 使用脱敏 fake transport，至少应断言 E-Hall 请求带有凭证 Cookie、adapter 收不到
-`Set-Cookie`，考试输出通过 `elecon.exam.list` schema。真实账号测试必须人工执行，不能放进 CI。
+`Set-Cookie`，输出通过对应 schema。真实账号测试必须人工执行，不能放进 CI。
 
 ## 夹具
 
-`fixtures/` 放脱敏后的 notice / schedule / grades / exam 期望输出。脱敏要求见 `adapters/README.md` 与 tools PII scanner。
+`fixtures/` 放脱敏后的 notice / schedule / grades / exam / classroom 期望输出。脱敏要求见 `adapters/README.md` 与 tools PII scanner。
 
 ## 待办
 
 - 滑块求解、用户名密码和真实登录仍由核心/人工流程负责，不得复制进 adapter。
-- **候选扩展**（card / classroom / library / energy）：字段映射、schema 缺口与**人工审阅清单**见 [`COVERAGE.md`](./COVERAGE.md)。当前 milestone 不接 energy；classroom 先扩 contract；card 依赖核心 openid 裁定。
+- **候选扩展**（card / library / energy）：字段映射、schema 缺口与**人工审阅清单**见 [`COVERAGE.md`](./COVERAGE.md)。当前 milestone 不接 energy；card 依赖核心 openid 裁定。
