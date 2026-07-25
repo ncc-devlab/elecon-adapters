@@ -29,12 +29,9 @@ const EXAM_TIME_PG =
   /^(\d{4})-(\d{2})-(\d{2})\s+.{1,4}\((\d{2})::?(\d{2})-(\d{2})::?(\d{2})\)/;
 
 export const capabilities = {
-  "notice.list": async (ctx, _params, responses) => {
-    // 保留核心旧 golden 的离线 responses 入口；正式 imperative 运行走 ctx.fetch。
-    if (responses?.page?.body) return parseNoticeHtml(responses.page.body);
-    const response = await ctx.fetch(`${ORIGIN}/index.htm`);
-    return parseNoticeHtml(await response.text());
-  },
+  // 公开通知：无凭证、纯 HTML 解析 → declarative（能力面最薄，红线 #5）。
+  // 核心按 manifest.requests 代取 `page` 并脱敏后传入；本函数必须同步（无 I/O / 无 Promise）。
+  "notice.list": (ctx, _params, responses) => parseNoticeHtml(responses.page.body),
 
   "schedule.week": async (ctx, params) => {
     const week = params?.week;
