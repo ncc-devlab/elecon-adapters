@@ -28,5 +28,8 @@ envelope、gzip 与 digest，不能替代发布签名。
 `npm run check` 还会执行 JS 编译、`elecon:html` import 白名单、纯解析（declarative）越权规则和存在时的
 `dist/catalog.json` schema/registry 校验。
 
+校验工具依赖 `typescript`（Apache-2.0）解析 JavaScript AST、`esbuild`（MIT）执行编译检查；
+二者仅用于开发/CI，不进入 adapter bundle 或客户端发布产物（红线 #9）。
+
 > 术语（`requestGraph` / `bind`·`compute`·`inject`）已按核心仓 ADR-022 / ADR-023 更新，见
 > [CONTRIBUTING.md](./CONTRIBUTING.md)；对应校验器随 `vendor/` 下次镜像生效。
