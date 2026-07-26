@@ -1,7 +1,7 @@
 {
   "_note": "脱敏公开通知 fixture。标题和链接为测试值，不含真实学生信息或认证材料。",
   "capability": "notice.list",
-  "params": { "page": 1 },
+  "params": {},
   "responses": {
     "page": {
       "status": 200,

@@ -1,9 +1,9 @@
-# school-xidian（西安电子科技大学）— imperative requestGraph adapter
+# school-xidian（西安电子科技大学）
 
 **状态：公开通知、课表、本科成绩/考试/空教室已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
 
-- **数据**：教务处公开通知 `notice.list`（emits `elecon.notice.list@1.1`）。
-- **登录数据**：IDS 登录后的 E-Hall `schedule.week`、本科 `grades.list`、`exam.list`、`classroom.buildings` / `classroom.available`（ADR-019）。
+- **公开数据**：教务处 `notice.list`（**declarative**，emits `elecon.notice.list@1.1`）。
+- **登录数据（imperative）**：IDS 登录后的 E-Hall `schedule.week`、本科 `grades.list`、`exam.list`、`classroom.buildings` / `classroom.available`（ADR-019）。
 - **成绩边界**：研究生成绩平台跨域 SSO 暂不接入。
 - **登录边界**：核心 WebView 托管 IDS 登录；adapter 只声明 `ehall-session` cookie scope，不接触用户名、密码或 cookie 值。
 - **域名白名单**：教务处、IDS、E-Hall（见 `manifest.json` `network.allow`）。

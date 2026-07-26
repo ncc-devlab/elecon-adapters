@@ -2,7 +2,7 @@
 
 | `adapters_tests/FDU` 来源 | 当前状态 | 说明 |
 |---|---|---|
-| `notice/fetch.py` 本科生院 | 已接入 `notice.list` | 公开 imperative、脱敏 fixture、已有 schema |
+| `notice/fetch.py` 本科生院 | 已接入 `notice.list` | 公开 declarative（首页 list.htm）、脱敏 fixture、已有 schema |
 | `notice/fetch.py` 研究生院 | 暂未接入 | 需要来源选择参数或独立 capability，并确认当前 DOM |
 | `edu/fetch.py` | 暂未接入 | 教务统一认证、课表/成绩专用映射和凭证 smoke 待完成 |
 | `graduate/fetch.py` | 暂未接入 | 研究生认证域和成绩/课表 schema 待审查 |

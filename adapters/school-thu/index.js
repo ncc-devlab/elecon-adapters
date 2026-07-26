@@ -4,36 +4,37 @@ const CARD = "https://card.tsinghua.edu.cn";
 const APP = "https://app.cs.tsinghua.edu.cn";
 
 export const capabilities = {
-  "notice.list": async (ctx, params, responses) => {
-    const html = responses?.page?.body || await text(ctx, `${INFO}/b/info/xxfb_fg/xnzx/template/more?oType=xs&lydw=${encodeURIComponent(params?.source || "")}`);
-    return parseNotices(html);
-  },
+  // 公开/门户通知：manifest 代取 page + webvpn-session；须同步纯解析（无 I/O）。
+  // 固定 lydw= 空串（默认全源）；按单位过滤需再扩 declarative 模板或独立 capability。
+  "notice.list": (_ctx, _params, responses) => parseNotices(responses.page.body),
 
-  "grades.list": async (ctx, params, responses) => {
-    const html = responses?.page?.body || await text(ctx, `${CJ}/cj.cjCjbAll.do?m=bks_cjdcx&cjdlx=zw&flag=di${params?.flag || 1}`);
+  "grades.list": async (ctx, params) => {
+    const html = await text(ctx, `${CJ}/cj.cjCjbAll.do?m=bks_cjdcx&cjdlx=zw&flag=di${params?.flag || 1}`);
     return parseGrades(html, params?.term || "");
   },
 
-  "schedule.week": async (ctx, params, responses) => {
+  "schedule.week": async (ctx, params) => {
     const week = params?.week;
     if (!Number.isInteger(week) || week < 1) throw new Error("schedule.week: params.week 必须是正整数");
     const firstDay = params?.firstDay || mondayOfCurrentWeek();
-    const windows = responses?.windows || await scheduleWindows(ctx, firstDay, params?.graduate === true);
+    const windows = await scheduleWindows(ctx, firstDay, params?.graduate === true);
     const rows = windows.flatMap((body) => parseJsonp(body));
     return { term: String(params?.term || ""), week, days: groupCourses(rows, week) };
   },
 
-  "card.balance": async (ctx, _params, responses) => {
-    const payload = responses?.userInfo || await json(ctx, `${CARD}/business/getCardUserinfo`);
+  "card.balance": async (ctx) => {
+    const payload = await json(ctx, `${CARD}/business/getCardUserinfo`);
     return mapBalance(payload);
   },
 
-  "card.transactions": async (ctx, params, responses) => {
-    const body = responses?.transactions?.body || await (await ctx.fetch(`${CARD}/business/querySelfTradeList`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: formBody(params?.form || params || {}),
-    })).text();
+  "card.transactions": async (ctx, params) => {
+    const body = await (
+      await ctx.fetch(`${CARD}/business/querySelfTradeList`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: formBody(params?.form || params || {}),
+      })
+    ).text();
     return parseTransactions(body, params?.cardNumber || "");
   },
 };

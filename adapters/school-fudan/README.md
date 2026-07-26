@@ -1,11 +1,11 @@
-# school-fudan（复旦大学）— imperative requestGraph adapter
+# school-fudan（复旦大学）— declarative notice adapter
 
-**状态：本科生院公开通知已接入，尚未签名发布。**
+**状态：本科生院公开通知已接入（declarative），尚未签名发布。**
 
-- capability：`notice.list`
-- 来源：`https://jwc.fudan.edu.cn/9397/list.htm`
+- capability：`notice.list`（`requestGraph: declarative`）
+- 来源：`https://jwc.fudan.edu.cn/9397/list.htm`（首页；分页 `listN.htm` 非 `{page}` 模板，首版不代取翻页）
 - 当前不涉及登录、凭证或学生数据。
-- `params.page` 支持分页；默认第 1 页。
+- fixture：`fixtures/notice.list.json`（脱敏 HTML + expected）
 
 FDU 测试目录中的教务课表/成绩、研究生系统、校园卡、生活服务和校内空教室属于后续能力，
 需要分别完成统一认证、凭证作用域、专用 schema 或人工安全审查，不能从公开通知 capability

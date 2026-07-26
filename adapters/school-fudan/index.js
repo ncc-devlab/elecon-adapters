@@ -1,8 +1,11 @@
 /**
- * school-fudan（复旦大学）公开通知 imperative adapter。
+ * school-fudan（复旦大学）公开通知 declarative adapter。
  *
- * 当前只接入本科生院公开通知；教务系统、研究生系统和生活服务需要另行完成
+ * 当前只接入本科生院公开通知首页；教务系统、研究生系统和生活服务需要另行完成
  * IDS/统一认证、凭证作用域与 contract 审查，不在此 capability 中隐式访问。
+ *
+ * notice.list：无凭证、单次 GET → declarative（红线 #5）。
+ * 分页 URL 形态为 list.htm / list2.htm…，非单一 {page} 模板；首版固定首页。
  */
 import {
   getAttributeValue,
@@ -16,12 +19,9 @@ import {
 const ORIGIN = "https://jwc.fudan.edu.cn";
 
 export const capabilities = {
-  "notice.list": async (ctx, params) => {
-    const page = Number.isInteger(params?.page) && params.page > 0 ? params.page : 1;
-    const suffix = page === 1 ? "" : String(page);
-    const undergraduateResponse = await ctx.fetch(`${ORIGIN}/9397/list${suffix}.htm`);
-    return parseNotices(await undergraduateResponse.text(), ORIGIN, "本科生院");
-  },
+  // 核心按 manifest.requests 代取 `page` 并脱敏后传入；须同步（无 I/O / 无 Promise）。
+  "notice.list": (_ctx, _params, responses) =>
+    parseNotices(responses.page.body, ORIGIN, "本科生院"),
 };
 
 function parseNotices(html, origin, source) {
