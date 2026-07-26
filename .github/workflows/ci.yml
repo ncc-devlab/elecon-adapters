@@ -19,7 +19,7 @@ jobs:
           node-version: "20"
 
       - name: Install (vendored 校验器依赖)
-        run: npm install
+        run: npm ci
 
       - name: Public adapter checks（manifest / fixture / PII）
         run: npm run check

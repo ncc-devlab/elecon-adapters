@@ -8,7 +8,7 @@
 | `contract/` | core `contract/` | manifest / capability / schema 契约（validator 据此校验） |
 | `adapters/_stdlib/` | core `adapters/_stdlib/` | `elecon:html` stdlib（bundle + 版本，供 stdlibMin 校验）;版本 = 1.0.0 |
 | `adapters/_template/` | core `adapters/_template/` | 贡献脚手架 |
-| `tools/src/{validator,scanner}/` | core `tools/src/` | CI 静态闸门（§2.10）;**不含 signer** |
+| `tools/src/{validator,scanner,adapter-policy}/` | core `tools/src/` | CI 静态闸门（§2.10）;**不含 signer** |
 | `packages/broker-primitives/` | core `packages/broker-primitives/dist` | validator 依赖的 url-match 原语 |
 
 - 源提交（core）：`00924980f1504983ce9e5c4777340fa1e263f49a`
