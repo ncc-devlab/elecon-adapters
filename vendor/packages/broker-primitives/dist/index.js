@@ -13,6 +13,7 @@
  *
  * 🔒 安全敏感（红线 #1 注入决策路径）：AI 起草，须人工 + 安全清单复核（AGENTS.md §1）。
  */
+export * from "./linear-regex.js";
 /** 把 `https://h/api/*` 形态模板转成锚定正则；`*` → `.*`，其余字面转义。 */
 export function allowToRegex(pattern) {
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
