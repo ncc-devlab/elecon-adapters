@@ -40,6 +40,7 @@ import { allowToRegex, scopePrefix, urlCoveredByAllow } from "@elecon/broker-pri
 import { Ajv2020, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { type BindDecl, type ComputeDecl, checkDataflow, type InjectDecl } from "./dataflow.js";
+import { checkResponseMasker, MAX_MASKER_FILE_BYTES, type ResponseMaskerPolicy } from "./response-masker.js";
 
 // TS 侧 url-match 单源在 @elecon/broker-primitives（审阅 P2-4，原本文件内联拷贝已删）。
 // re-export 保持既有 API 面（url-match.smoke.ts 经此面验证"校验器实际使用的实现"合 golden）。
@@ -87,9 +88,32 @@ interface CredentialDecl {
   type: "cookie" | "header" | "query";
   /** URL query 注入参数名（ADR-020 §2.2）；仅 type=query 时存在。 */
   queryParam?: string;
+  /** 命名注入头名（ADR-029 §2.1）；仅 type=header 时存在，缺省 = Authorization。静态字面量，禁凭证 / hop-by-hop / 实体控制头。 */
+  headerName?: string;
   /** 凭证角色（ADR-017）。sso-master=CAS 母凭证。可选；缺省=普通下游凭证。 */
   role?: "sso-master";
 }
+
+/**
+ * ADR-029 §2.1 命名 header 凭证 denylist（小写）：这些头**不得**作 headerName 注入。
+ * 凭证头（Cookie/Set-Cookie）由 broker 的 cookie 通道专管；Host/Content-Length 是实体 / 路由
+ * 控制头；Connection 及 hop-by-hop（RFC 7230 §6.1）跨代理语义敏感；代理认证头独立。
+ * Authorization **不在**denylist——它是 headerName 缺省值，允许显式声明。
+ */
+const FORBIDDEN_HEADER_NAMES = new Set<string>([
+  "cookie",
+  "set-cookie",
+  "host",
+  "content-length",
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
 
 /** ssoMint 单个下游服务（ADR-017 §2.5）。 */
 interface SsoMintService {
@@ -131,6 +155,7 @@ interface Manifest {
 
 interface Contract {
   manifestValidate: ValidateFunction;
+  responseMaskerValidate: ValidateFunction;
   registry: Record<string, RegistryEntry>;
   /** 按 schema $id 取域 schema 的校验函数；未落盘的返回 undefined。 */
   schemaFor: (id: string) => ValidateFunction | undefined;
@@ -165,6 +190,10 @@ export function loadContract(): Contract {
 
   const manifestSchema = readJson<Record<string, unknown>>(join(contractDir, "manifest.schema.json"));
   const manifestValidate = ajv.compile(manifestSchema);
+  const responseMaskerSchema = readJson<Record<string, unknown>>(
+    join(contractDir, "response-masker.schema.json"),
+  );
+  const responseMaskerValidate = ajv.compile(responseMaskerSchema);
 
   const registryRaw = readJson<{ capabilities: Record<string, RegistryEntry> }>(
     join(contractDir, "capability", "registry.json"),
@@ -192,6 +221,7 @@ export function loadContract(): Contract {
 
   return {
     manifestValidate,
+    responseMaskerValidate,
     registry: registryRaw.capabilities,
     schemaFor: (id) => ajv.getSchema(id) as ValidateFunction | undefined,
     stdlibVersion,
@@ -620,6 +650,31 @@ export function checkCredentials(
       });
     }
 
+    // CH1–CH3 命名 header 凭证（ADR-029 §2.1）：headerName 仅 type=header 时可声明；
+    // 须为静态合法 header token；且不得为凭证 / hop-by-hop / 实体控制头（denylist）。
+    // 凭证只由 broker 按声明注入，headerName 缺省 Authorization。
+    if (decl.headerName !== undefined) {
+      if (decl.type !== "header") {
+        findings.push({
+          level: "error",
+          code: "CH1_header_name_forbidden",
+          message: `credential '${name}' 仅 type=header 时可声明 headerName`,
+        });
+      } else if (!/^[A-Za-z][A-Za-z0-9-]*$/.test(decl.headerName)) {
+        findings.push({
+          level: "error",
+          code: "CH2_header_name_malformed",
+          message: `credential '${name}' 的 headerName 非法：'${decl.headerName}'（须为静态合法 header token：字母起始，字母 / 数字 / '-'）`,
+        });
+      } else if (FORBIDDEN_HEADER_NAMES.has(decl.headerName.toLowerCase())) {
+        findings.push({
+          level: "error",
+          code: "CH3_header_name_denylisted",
+          message: `credential '${name}' 的 headerName '${decl.headerName}' 属禁止头（Cookie/Set-Cookie/Host/Content-Length/Connection/代理认证/hop-by-hop，ADR-029 §2.1）`,
+        });
+      }
+    }
+
     for (const pattern of decl.scope ?? []) {
       scopes.push({ name, pattern });
       // C6 scope ⊆ network.allow
@@ -822,10 +877,73 @@ export function validateAdapterDir(dir: string, contract: Contract): Finding[] {
       },
     ];
   }
+  const maskerFindings = checkResponseMaskerFiles(dir, manifest, contract.responseMaskerValidate);
   return [
     ...checkManifest(manifest, contract),
+    ...maskerFindings,
     ...checkBundleSize(dir),
     ...checkFixtures(dir, manifest, contract),
+  ];
+}
+
+/**
+ * `masker.json` 必须位于 adapter 根目录且唯一。当前尚无旧 host 可理解的拒载字段，
+ * 因此即使策略本身有效也阻断发布；host gate 落地后再移除 RM0（ADR-026 §2.7）。
+ */
+function checkResponseMaskerFiles(
+  dir: string,
+  manifest: Manifest,
+  schemaValidate: ValidateFunction,
+): Finding[] {
+  const found: string[] = [];
+  const walk = (current: string): void => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(path);
+      } else if (entry.isFile() && entry.name === "masker.json") {
+        found.push(path);
+      }
+    }
+  };
+  walk(dir);
+
+  if (found.length === 0) return [];
+  const rootPolicyPath = join(dir, "masker.json");
+  if (found.length !== 1 || found[0] !== rootPolicyPath) {
+    return [
+      {
+        level: "error",
+        code: "RM0_policy_location",
+        message: "masker.json 必须且只能存在于 adapter 根目录",
+      },
+    ];
+  }
+  if (statSync(rootPolicyPath).size > MAX_MASKER_FILE_BYTES) {
+    return [
+      {
+        level: "error",
+        code: "RM0_policy_too_large",
+        message: `masker.json 超过 ${MAX_MASKER_FILE_BYTES} 字节上限`,
+      },
+    ];
+  }
+
+  let policy: ResponseMaskerPolicy;
+  try {
+    policy = readJson<ResponseMaskerPolicy>(rootPolicyPath);
+  } catch {
+    return [{ level: "error", code: "RM0_policy_unparseable", message: "masker.json 解析失败" }];
+  }
+
+  return [
+    ...checkResponseMasker(policy, manifest, schemaValidate),
+    {
+      level: "error",
+      code: "RM0_host_gate_unavailable",
+      message: "当前 host 尚无可供旧客户端识别的 Response Masker 最低版本门，禁止发布 masker bundle",
+    },
   ];
 }
 
