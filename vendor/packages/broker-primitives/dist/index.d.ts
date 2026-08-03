@@ -14,6 +14,18 @@
  * 🔒 安全敏感（红线 #1 注入决策路径）：AI 起草，须人工 + 安全清单复核（AGENTS.md §1）。
  */
 export * from "./linear-regex.js";
+/**
+ * 响应头 allowlist（ADR-009 §2.5 默认集，小写）——**单一数据源**。
+ *
+ * 运行时 `sanitizeResponseHeaders`（server broker）据此决定哪些响应头能交回 adapter；
+ * 校验器 CH3（tools validator）据此禁止命名凭证头（ADR-029 §2.1 `headerName`）落在其中。
+ *
+ * 🔒 **两处必须同源**：若命名凭证头名与响应 allowlist 名相同，上游一旦把凭证值回显在同名
+ * 响应头上，`sanitizeResponseHeaders` 会当作合法头**保留**，凭证值直达 adapter（破红线 #1）。
+ * 命名头注入的「回显必被丢弃」由此成为**结构保证**（CH3 拦在声明期），而非「所选名恰好不在
+ * allowlist」的巧合。故此集与 CH3 denylist 同源，防两表漂移。
+ */
+export declare const RESPONSE_HEADER_ALLOWLIST: ReadonlySet<string>;
 /** 把 `https://h/api/*` 形态模板转成锚定正则；`*` → `.*`，其余字面转义。 */
 export declare function allowToRegex(pattern: string): RegExp;
 /** 具体 url 是否被某白名单项覆盖（fail-closed 出口判定）。 */
