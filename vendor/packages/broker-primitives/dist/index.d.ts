@@ -26,6 +26,13 @@ export * from "./linear-regex.js";
  * allowlist」的巧合。故此集与 CH3 denylist 同源，防两表漂移。
  */
 export declare const RESPONSE_HEADER_ALLOWLIST: ReadonlySet<string>;
+/**
+ * ADR-029 §2.1 命名 credential header 固定禁集（小写）。
+ *
+ * CH3 的完整禁集是本集合与 [RESPONSE_HEADER_ALLOWLIST] 的并集。validator 与 TS Broker
+ * runtime 必须共用这份定义；Dart 侧由 inject-policy golden 镜像锁定（ADR-001 §8）。
+ */
+export declare const FORBIDDEN_CREDENTIAL_HEADER_NAMES: ReadonlySet<string>;
 /** 把 `https://h/api/*` 形态模板转成锚定正则；`*` → `.*`，其余字面转义。 */
 export declare function allowToRegex(pattern: string): RegExp;
 /** 具体 url 是否被某白名单项覆盖（fail-closed 出口判定）。 */
