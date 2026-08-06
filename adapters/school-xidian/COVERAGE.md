@@ -19,6 +19,7 @@
 | `ehall/scores.py` | `grades.list` | 已接入（本科） | 研究生成绩跨域 SSO 不接 |
 | `ehall/exams.py` | `exam.list` | 已接入（本科） | `smoke:xidian-exams` |
 | `ehall/empty_classroom.py` | `classroom.buildings` / `classroom.available` | 已接入（本科） | ADR-019；`smoke:xidian-classroom` |
+| `card/balance.py` | `card.balance` / `card.transactions` | 已接入开发态 | ADR-020 query credential；`smoke:xidian-card`；真机字段仍待校准 |
 | `ehall/session.py` | — | 非 capability | 登录 / useApp 由核心托管 |
 
 ---
@@ -27,9 +28,9 @@
 
 | 来源测试 | Capability | 优先级 | 一句话结论 |
 |---|---|---|---|
-| `card/balance.py` | `card.balance` / `card.transactions` | P1（核心裁定后） | 流水 JSON 可用；余额 HTML 脆；**openid 阻塞** |
 | `library/borrow.py` | `library.loans` | P2–P3 | 字段映射干净；CAS/`openId`/双域待真机校准 |
 | `energy/meter.py` | `energy.usage` | 冻结 | 校园网 + AES/sign；不进当前 milestone |
+| `aircon/control.py` | `climate.status` / `climate.command` | 冻结 | Proposed ADR-029/030；不得把定时/重试迁入 adapter |
 
 ### 相对 `exam.list` 的增量成本（粗估）
 
@@ -85,22 +86,25 @@
 
 `card.balance` 无独立 params schema（空对象即可）。
 
-### 1.3 Manifest / 凭证（期望声明，未实现）
+### 1.3 Manifest / 凭证（开发态已实现）
 
 ```text
 network.allow += https://v8scan.xidian.edu.cn/*
-credentials.card-session = { scope: ["https://v8scan.xidian.edu.cn/*"], type: cookie 或 URL 凭证（待裁定） }
+credentials.card-session = { scope: ["https://v8scan.xidian.edu.cn/*"], type: query, queryParam: openid }
 ```
 
 ### 1.4 人工审阅清单（card）
 
-- [ ] **openid 建模**：是否作为 `CredentialEntry` 收割进 store；adapter **永不见** openid 明文（红线 #1）
-- [ ] openid 落在 URL query 时：cookie 收割是否不够；是否要 URL 参数注入或核心侧合成下游 session
+- [x] **openid 建模**：ADR-020 query credential；adapter **永不见** openid 明文（红线 #1）
+- [x] query harvest/inject 与 fake transport smoke 已落地
 - [ ] mint `service` / `success` URL 与 `navigationAllow` 是否覆盖整条 OAuth 链
 - [ ] 余额 HTML 选择器稳定性；失败语义（`errorStatus` vs 抛错）
 - [ ] `cardNumber` 真实字段来源与脱敏 fixture 规则
 - [ ] 流水字段名真机对照表 + PII 扫描通过后再进 `fixtures/`
 - [ ] 真实账号仅人工；**禁止 CI 打真实 IDS/v8scan**
+
+开发态实现对账户页缺失真实卡号/余额、流水缺失金额/时间一律 fail-closed，不使用学号或占位值冒充。
+字段映射兼容探针 `resultData.rows` 和上游当前 `resultData[]`，但正式发布前仍必须用人工脱敏响应校准。
 
 ---
 
@@ -220,6 +224,24 @@ credentials.library-session = { scope: 上述域或拆分, type: cookie 或 toke
 - [ ] 校内脱敏 fixture 流程
 - [ ] **在未通过前：不在 `manifest.json` capabilities 中声明**
 
+命名 header、固定 body 和不透明句柄注入已形成 Proposed ADR-029。在该 ADR 经人工接受并完成双端
+Broker/golden 前，不能把 AES、OAuth code、用户标识、NodeID 或 signature 复制进 QuickJS adapter。
+
+---
+
+## 5. 聚好联空调（冻结）
+
+**探针：** `adapters_tests/XIDIAN/aircon/control.py`  
+**域：** `gxkt.juhaolian.cn`  
+**接口：** `GET /api/device/direct/state?imei=...`、`POST /api/device/direct/command`
+
+探针当前要求 `x-access-token`，IMEI 是设备标识。即使部分环境暂时只凭 IMEI 可控，也必须为未来操作
+凭据保留 Broker 注入空间，不能把 token 放进 params、manifest 或 adapter。命名 header 见 Proposed
+ADR-029；`climate.devices/status/command`、用户确认、禁重试和结果未知语义见 Proposed ADR-030。
+
+探针中的原始 JSON command、进程内定时器和三次重试不得迁入正式 adapter。正式接入前不在 manifest
+声明 climate capability；CI 永远只使用 fake transport，不访问真实设备。
+
 ---
 
 ## 横切纪律（所有候选能力）
@@ -239,9 +261,10 @@ credentials.library-session = { scope: 上述域或拆分, type: cookie 或 toke
 | 0 | card `openid` / `card-session` 专项裁定 | **人工** | 红线 #1 |
 | 1 | `classroom.available` params / 语义 ADR | contract | 红线 #6 |
 | 2 | `classroom.available` fetch + fixture + smoke | adapter | 步骤 1 |
-| 3 | `card.transactions` + `card.balance` | 核心 + adapter | 步骤 0 |
+| 3 | `card.transactions` + `card.balance` 开发态 + fake smoke | 核心 + adapter | 已完成；待真机字段校准/签名发布 |
 | 4 | `library.loans` 真机校准 → mint → adapter | 核心 + adapter | 探针验收 |
 | 5 | `energy.usage` 保持文档/探针 only | — | 校园网产品决策 |
+| 6 | 评审 ADR-029/030 后接空调 status/command | 核心 + contract + adapter | 凭证与 actuator 门禁 |
 
 ---
 
