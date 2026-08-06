@@ -150,7 +150,7 @@ export const capabilities = {
         },
         { name: "XNXQDM", value: term, linkOpt: "AND", builder: "equal" },
         { name: "ZC", value: week, linkOpt: "AND", builder: "equal" },
-        { name: "ZC", value: weekday, linkOpt: "AND", builder: "equal" },
+        { name: "XQ", value: weekday, linkOpt: "AND", builder: "equal" },
       ]),
       "*order": "+LC,+JASMC",
       pageSize: "999",
@@ -255,9 +255,12 @@ async function openApp(ctx, appId) {
 function mapGrade(row) {
   const rawScore = row.ZCJ;
   const numericScore = Number(rawScore);
-  const score = Number.isFinite(numericScore) && String(rawScore).trim() !== ""
+  const scoreText = String(rawScore ?? "").trim();
+  const score = Number.isFinite(numericScore) && scoreText !== ""
     ? { kind: "numeric", value: numericScore, max: 100 }
-    : { kind: isPassFail(rawScore) ? "passfail" : "letter", value: String(rawScore ?? "") };
+    : scoreText === ""
+      ? { kind: "unknown" }
+      : { kind: isPassFail(rawScore) ? "passfail" : "letter", value: scoreText };
   const classStatus = String(row.XGXKLBDM_DISPLAY || row.KCXZDM_DISPLAY || "");
   return {
     courseId: String(row.JXBID || row.KCH || ""),
