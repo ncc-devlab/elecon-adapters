@@ -1,7 +1,20 @@
 {
-  "_note": "脱敏考试输出 fixture。字段来自本科 wdksap 行；真实 cookie/学号/姓名不得提交。",
+  "_note": "脱敏 imperative replay。字段形态来自本科 wdksap 行；真实 cookie/学号/姓名不得提交。",
+  "kind": "imperative-replay",
   "capability": "exam.list",
   "params": { "term": "2025-2026-2" },
+  "responses": [
+    {
+      "status": 200,
+      "headers": { "content-type": "text/html" },
+      "body": "<html><body>示例应用入口</body></html>"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"wdksap\":{\"extParams\":{\"code\":1},\"rows\":[{\"KCH\":\"COURSE-EXAMPLE\",\"KCM\":\"示例课程\",\"KSSJMS\":\"2026-06-20 09:00-11:00\",\"KSRQ\":\"2026-06-20\",\"XXXQMC\":\"示例校区\",\"JXLMC\":\"示例教学楼\",\"JASMC\":\"A101\",\"ZWH\":\"12\",\"KSMC\":\"期末考试\"}]}}}"
+    }
+  ],
   "expected": {
     "term": "2025-2026-2",
     "items": [

@@ -1,7 +1,20 @@
 {
-  "_note": "脱敏教学楼 discovery fixture。字段来自本科 ehall kxjas jxlcx；真实 cookie/学号不得提交。",
+  "_note": "脱敏 imperative replay。字段形态来自本科 ehall kxjas jxlcx；真实 cookie/学号不得提交。",
+  "kind": "imperative-replay",
   "capability": "classroom.buildings",
   "params": {},
+  "responses": [
+    {
+      "status": 200,
+      "headers": { "content-type": "text/html" },
+      "body": "<html><body>示例应用入口</body></html>"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"jxlcx\":{\"rows\":[{\"JXLDM\":\"BLDG-A\",\"JXLJC\":\"示例教学楼A\",\"XXXQMC\":\"示例校区\"},{\"JXLDM\":\"BLDG-B\",\"JXLJC\":\"示例教学楼B\",\"XXXQMC\":\"示例校区\"}]}}}"
+    }
+  ],
   "expected": {
     "items": [
       {

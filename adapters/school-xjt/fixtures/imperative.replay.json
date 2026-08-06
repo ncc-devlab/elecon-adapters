@@ -1,4 +1,5 @@
 {
+  "_note": "脱敏 imperative replay（红线 #8）：challenge 标识、cookie、通知标题和链接均为测试值。",
   "kind": "imperative-replay",
   "capability": "notice.list",
   "params": {},
@@ -21,12 +22,24 @@
       "bodyFile": "fixtures/dean.xjtu.edu.cn/notice.html"
     }
   ],
-  "assertions": {
-    "requestCount": 3,
-    "methods": ["GET", "POST", "GET"],
-    "cookieIncludes": [{ "request": 2, "value": "client_id=" }],
-    "itemCount": 16,
-    "itemSource": "教务处",
-    "itemCategory": "academic"
+  "expected": {
+    "items": [
+      {
+        "id": "90001",
+        "title": "关于示例课程安排的通知",
+        "url": "https://dean.xjtu.edu.cn/info/1000/90001.htm",
+        "category": "academic",
+        "source": "教务处",
+        "publishedAt": "2026-06-15T00:00:00Z"
+      },
+      {
+        "id": "90002",
+        "title": "示例教学项目申报公告",
+        "url": "https://dean.xjtu.edu.cn/info/1000/90002.htm",
+        "category": "academic",
+        "source": "教务处",
+        "publishedAt": "2026-06-12T00:00:00Z"
+      }
+    ]
   }
 }

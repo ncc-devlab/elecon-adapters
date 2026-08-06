@@ -1,7 +1,20 @@
 {
-  "_note": "脱敏成绩输出 fixture。真实学号、姓名、成绩和 IDS cookie 不得提交；核心 imperative smoke 使用 fake transport。",
+  "_note": "脱敏 imperative replay。真实学号、姓名、成绩和 IDS cookie 不得提交。",
+  "kind": "imperative-replay",
   "capability": "grades.list",
   "params": { "term": "2025-2026-2" },
+  "responses": [
+    {
+      "status": 200,
+      "headers": { "content-type": "text/html" },
+      "body": "<html><body>示例应用入口</body></html>"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"xscjcx\":{\"extParams\":{\"code\":1},\"rows\":[{\"XSKCM\":\"示例课程\",\"JXBID\":\"CLASS-EXAMPLE\",\"XNXQDM\":\"2025-2026-2\",\"XF\":\"3\",\"ZCJ\":\"92\",\"XGXKLBDM_DISPLAY\":\"必修\"}]}}}"
+    }
+  ],
   "expected": {
     "term": "2025-2026-2",
     "items": [
