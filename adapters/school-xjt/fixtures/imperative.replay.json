@@ -21,6 +21,26 @@
       "bodyFile": "fixtures/dean.xjtu.edu.cn/notice.html"
     }
   ],
+  "expected": {
+    "items": [
+      { "id": "10336", "title": "关于举办“西安交通大学—清华大学写作中心”通识课程建设经验交流会的通知", "url": "https://dean.xjtu.edu.cn/info/1093/10336.htm", "category": "academic", "source": "教务处" },
+      { "id": "10301", "title": "关于开展首批西安交通大学“人工智能先导计划”未来教学综改项目立项工作的通知", "url": "https://dean.xjtu.edu.cn/info/1103/10301.htm", "category": "academic", "source": "教务处" },
+      { "id": "10236", "title": "关于开展2027版本科专业培养方案修订调研工作的通知", "url": "https://dean.xjtu.edu.cn/info/1176/10236.htm", "category": "academic", "source": "教务处" },
+      { "id": "10151", "title": "关于申报2026年课程思政专项研究项目的通知", "url": "https://dean.xjtu.edu.cn/info/1103/10151.htm", "category": "academic", "source": "教务处" },
+      { "id": "9801", "title": "关于开放2025-2026学年第二学期本科生评教的通知", "url": "https://dean.xjtu.edu.cn/info/1178/9801.htm", "category": "academic", "source": "教务处" },
+      { "id": "9421", "title": "关于启动2025级本科生劳动教育并继续做好2023、2024级本科生劳动教育的通知", "url": "https://dean.xjtu.edu.cn/info/1176/9421.htm", "category": "academic", "source": "教务处" },
+      { "id": "10335", "title": "关于开展2024年课程思政专项研究项目结题验收工作的通知", "url": "https://dean.xjtu.edu.cn/info/1103/10335.htm", "category": "academic", "source": "教务处" },
+      { "id": "10334", "title": "关于2025-2026学年夏季小学期2025级学生教学安排及选课的通知", "url": "https://dean.xjtu.edu.cn/info/1093/10334.htm", "category": "academic", "source": "教务处" },
+      { "id": "10292", "title": "关于开展西安交通大学首批微专业招生报名的通知", "url": "https://dean.xjtu.edu.cn/info/1100/10292.htm", "category": "academic", "source": "教务处" },
+      { "id": "10327", "title": "2026年6月全国大学英语四、六级预测考试考生名单及考场安排通知", "url": "https://dean.xjtu.edu.cn/info/1171/10327.htm", "category": "academic", "source": "教务处" },
+      { "id": "10324", "title": "2025-2026学年第二学期大学英语课程口语机考考场安排通知", "url": "https://dean.xjtu.edu.cn/info/1171/10324.htm", "category": "academic", "source": "教务处" },
+      { "id": "10314", "title": "关于2026年全英文课程MOOC建设项目立项结果的公示", "url": "https://dean.xjtu.edu.cn/info/1175/10314.htm", "category": "academic", "source": "教务处" },
+      { "id": "10281", "title": "关于第六届“校园开放日”互动路演项目立项的通知", "url": "https://dean.xjtu.edu.cn/info/1092/10281.htm", "category": "academic", "source": "教务处" },
+      { "id": "10233", "title": "关于组织参加2026年“智慧树杯”课创赛、专创赛的通知", "url": "https://dean.xjtu.edu.cn/info/1092/10233.htm", "category": "academic", "source": "教务处" },
+      { "id": "10231", "title": "2026年西安交通大学－中国科学院高能物理研究所钱三强菁英班录取结果公示", "url": "https://dean.xjtu.edu.cn/info/1179/10231.htm", "category": "academic", "source": "教务处" },
+      { "id": "10228", "title": "关于通识大讲堂第39期的通知", "url": "https://dean.xjtu.edu.cn/info/1175/10228.htm", "category": "academic", "source": "教务处" }
+    ]
+  },
   "assertions": {
     "requestCount": 3,
     "methods": ["GET", "POST", "GET"],
