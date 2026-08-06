@@ -1,0 +1,36 @@
+{
+  "_note": "完全虚构的一卡通流水输出 fixture；不得替换为真实消费记录或凭证。",
+  "capability": "card.transactions",
+  "params": { "page": 1, "size": 20 },
+  "kind": "imperative-replay",
+  "responses": [
+    {
+      "status": 200,
+      "headers": { "content-type": "text/html" },
+      "body": "<!doctype html><html><body><p>校园卡号：CARD-EXAMPLE-0001</p><p>账户余额：￥123.45</p></body></html>"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"success\":true,\"resultData\":{\"total\":1,\"rows\":[{\"txdate\":\"2026-01-01 12:00:00\",\"txamt\":\"-12.50\",\"tradeType\":\"消费\",\"mername\":\"示例商户\",\"id\":\"TX-EXAMPLE-0001\"}]}}"
+    }
+  ],
+  "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
+  "expected": {
+    "cardNumber": "CARD-EXAMPLE-0001",
+    "page": 1,
+    "size": 20,
+    "total": 1,
+    "hasNext": false,
+    "items": [
+      {
+        "time": "2026-01-01T04:00:00.000Z",
+        "amountMinor": 1250,
+        "currency": "CNY",
+        "direction": "debit",
+        "merchant": "示例商户",
+        "transactionId": "TX-EXAMPLE-0001"
+      }
+    ]
+  }
+}

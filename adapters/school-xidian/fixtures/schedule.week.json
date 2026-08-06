@@ -2,6 +2,16 @@
   "_note": "脱敏课表输出 fixture。覆盖 1-4 周连续段（week=3 命中）。单双周/多段由核心 smoke 用 fake transport 覆盖；真实 IDS cookie 与个人课程不得提交。",
   "capability": "schedule.week",
   "params": { "term": "2025-2026-2", "week": 3 },
+  "kind": "imperative-replay",
+  "responses": [
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"xskcb\":{\"extParams\":{\"code\":1},\"rows\":[{\"SKZC\":\"1-4周\",\"SKXQ\":1,\"KSJC\":\"1\",\"JSJC\":\"2\",\"KCM\":\"示例课程\",\"KCH\":\"COURSE-EXAMPLE\",\"SKJS\":\"示例教师\",\"JASMC\":\"示例教学楼\"}]}}}"
+    }
+  ],
+  "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
   "expected": {
     "term": "2025-2026-2",
     "week": 3,

@@ -1,0 +1,18 @@
+{
+  "_note": "完全虚构的一卡通输出 fixture；不得替换为真实卡号、openid 或余额页面原件。",
+  "capability": "card.balance",
+  "params": {},
+  "kind": "imperative-replay",
+  "responses": [
+    {
+      "status": 200,
+      "headers": { "content-type": "text/html" },
+      "body": "<!doctype html><html><body><p>校园卡号：CARD-EXAMPLE-0001</p><p>账户余额：￥123.45</p></body></html>"
+    }
+  ],
+  "assertions": { "requestCount": 1, "methods": ["GET"] },
+  "expected": {
+    "cardNumber": "CARD-EXAMPLE-0001",
+    "balance": { "amountMinor": 12345, "currency": "CNY" }
+  }
+}

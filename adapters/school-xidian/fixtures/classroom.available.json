@@ -8,6 +8,26 @@
     "sectionStart": 1,
     "sectionEnd": 4
   },
+  "kind": "imperative-replay",
+  "responses": [
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"jxlcx\":{\"rows\":[{\"JXLDM\":\"BLDG-A\",\"JXLJC\":\"示例教学楼A\",\"XXXQMC\":\"示例校区\"}]}}}"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"rqzhzcjc\":{\"ZC\":5,\"XQJ\":1}}}"
+    },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"cxjsqk\":{\"rows\":[{\"JASMC\":\"A101\",\"JASDM\":\"ROOM-A101\",\"LC\":\"1\",\"JC1\":\"0\",\"JC2\":\"0\",\"JC3\":\"0\",\"JC4\":\"0\",\"JC5\":\"1_\",\"JC6\":\"1_\",\"JC7\":\"0\",\"JC8\":\"0\",\"JC9\":\"0\",\"JC10\":\"0\",\"JC11\":\"0\"},{\"JASMC\":\"A102\",\"JASDM\":\"ROOM-A102\",\"LC\":\"1\",\"JC1\":\"1_\",\"JC2\":\"1_\",\"JC3\":\"0\",\"JC4\":\"0\",\"JC5\":\"0\",\"JC6\":\"0\",\"JC7\":\"0\",\"JC8\":\"0\",\"JC9\":\"0\",\"JC10\":\"0\",\"JC11\":\"0\"}]}}}"
+    }
+  ],
+  "assertions": { "requestCount": 4, "methods": ["GET", "POST", "POST", "POST"] },
   "expected": {
     "date": "2026-03-16",
     "term": "2025-2026-2",

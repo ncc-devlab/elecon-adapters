@@ -2,6 +2,16 @@
   "_note": "脱敏教学楼 discovery fixture。字段来自本科 ehall kxjas jxlcx；真实 cookie/学号不得提交。",
   "capability": "classroom.buildings",
   "params": {},
+  "kind": "imperative-replay",
+  "responses": [
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"jxlcx\":{\"rows\":[{\"JXLDM\":\"BLDG-A\",\"JXLJC\":\"示例教学楼A\",\"XXXQMC\":\"示例校区\"},{\"JXLDM\":\"BLDG-B\",\"JXLJC\":\"示例教学楼B\",\"XXXQMC\":\"示例校区\"}]}}}"
+    }
+  ],
+  "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
   "expected": {
     "items": [
       {

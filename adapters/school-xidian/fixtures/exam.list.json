@@ -2,6 +2,16 @@
   "_note": "脱敏考试输出 fixture。字段来自本科 wdksap 行；真实 cookie/学号/姓名不得提交。",
   "capability": "exam.list",
   "params": { "term": "2025-2026-2" },
+  "kind": "imperative-replay",
+  "responses": [
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"wdksap\":{\"extParams\":{\"code\":1},\"rows\":[{\"KCH\":\"COURSE-EXAMPLE\",\"KCM\":\"示例课程\",\"KSSJMS\":\"2026-06-20 09:00-11:00\",\"XXXQMC\":\"示例校区\",\"JXLMC\":\"示例教学楼\",\"JASMC\":\"A101\",\"ZWH\":\"12\",\"KSMC\":\"期末考试\"}]}}}"
+    }
+  ],
+  "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
   "expected": {
     "term": "2025-2026-2",
     "items": [
