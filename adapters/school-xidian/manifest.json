@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.3.1",
+  "adapterVersion": "0.4.0",
   "schoolId": "xidian",
   "displayName": "西安电子科技大学",
   "trustTier": "official",
@@ -10,21 +10,55 @@
     "allow": [
       "https://jwc.xidian.edu.cn/*",
       "https://ids.xidian.edu.cn/*",
-      "https://ehall.xidian.edu.cn/*"
+      "https://ehall.xidian.edu.cn/*",
+      "https://v8scan.xidian.edu.cn/*"
     ]
   },
   "login": {
-    "url": "https://ids.xidian.edu.cn/authserver/login?service=https%3A%2F%2Fehall.xidian.edu.cn%2Fnew%2Findex.html",
+    "url": "https://ids.xidian.edu.cn/authserver/login?service=https%3A%2F%2Fehall.xidian.edu.cn%2Flogin%3Fservice%3Dhttps%3A%2F%2Fehall.xidian.edu.cn%2Fnew%2Findex.html",
     "navigationAllow": [
       "https://ids.xidian.edu.cn/*",
-      "https://ehall.xidian.edu.cn/*"
+      "https://ehall.xidian.edu.cn/*",
+      "https://v8scan.xidian.edu.cn/*",
+      "https://xxcapp.xidian.edu.cn/*"
     ],
-    "success": { "whenUrlMatches": ["https://ehall.xidian.edu.cn/new/*"] }
+    "success": {
+      "whenUrlMatches": [
+        "https://ehall.xidian.edu.cn/new/index.html*",
+        "https://v8scan.xidian.edu.cn/myaccount/openMyAccount*"
+      ]
+    },
+    "ssoMint": {
+      "authEndpoint": "https://ids.xidian.edu.cn/authserver/login?service={service}",
+      "services": {
+        "ehall-session": {
+          "service": "https://ehall.xidian.edu.cn/login?service=https://ehall.xidian.edu.cn/new/index.html",
+          "success": ["https://ehall.xidian.edu.cn/new/index.html*"]
+        },
+        "card-session": {
+          "service": "https://v8scan.xidian.edu.cn/home/openXDOAuth2Page",
+          "success": [
+            "https://v8scan.xidian.edu.cn/myaccount/*",
+            "https://v8scan.xidian.edu.cn/myaccount/openMyAccount*"
+          ]
+        }
+      }
+    }
   },
   "credentials": {
+    "ids-cas": {
+      "scope": ["https://ids.xidian.edu.cn/*"],
+      "type": "cookie",
+      "role": "sso-master"
+    },
     "ehall-session": {
       "scope": ["https://ehall.xidian.edu.cn/*"],
       "type": "cookie"
+    },
+    "card-session": {
+      "scope": ["https://v8scan.xidian.edu.cn/*"],
+      "type": "query",
+      "queryParam": "openid"
     }
   },
   "capabilities": [
@@ -70,6 +104,17 @@
       "requestGraph": "imperative",
       "emits": { "schema": "elecon.classroom.available", "schemaVersion": "1.1" },
       "params": { "schema": "elecon.params.classroom.available", "schemaVersion": "1.1" }
+    },
+    {
+      "id": "card.balance",
+      "requestGraph": "imperative",
+      "emits": { "schema": "elecon.card.balance", "schemaVersion": "1.0" }
+    },
+    {
+      "id": "card.transactions",
+      "requestGraph": "imperative",
+      "emits": { "schema": "elecon.card.transactions", "schemaVersion": "1.0" },
+      "params": { "schema": "elecon.params.card.transactions", "schemaVersion": "1.0" }
     }
   ]
 }

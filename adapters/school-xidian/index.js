@@ -22,6 +22,7 @@ const EXAM_APP_ID = "4768687067472349";
 const CLASSROOM_APP_ID = "4768402106681759";
 const CLASSROOM_BASE = `${SCHEDULE_APP}/jwapp/sys/kxjas/modules/kxjas`;
 const CLASSROOM_SECTION_COUNT = 11;
+const CARD_BASE = "https://v8scan.xidian.edu.cn";
 
 // 本科 KSSJMS：`2025-06-20 09:00-11:00`（偶见 `::`）；研究生：`2025-06-20 周四(09:00-11:00)`
 const EXAM_TIME_UG = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2})::?(\d{2})-(\d{2})::?(\d{2})/;
@@ -194,7 +195,168 @@ export const capabilities = {
     };
     return out;
   },
+
+  "card.balance": async (ctx) => {
+    const account = await fetchCardAccount(ctx);
+    return {
+      cardNumber: account.cardNumber,
+      balance: { amountMinor: account.balanceMinor, currency: "CNY" },
+    };
+  },
+
+  "card.transactions": async (ctx, params) => {
+    const page = params?.page ?? 1;
+    const size = params?.size ?? 20;
+    if (!Number.isInteger(page) || page < 1) {
+      throw new Error("card.transactions: params.page 必须是正整数");
+    }
+    if (!Number.isInteger(size) || size < 1) {
+      throw new Error("card.transactions: params.size 必须是正整数");
+    }
+
+    const account = await fetchCardAccount(ctx);
+    const response = await postForm(ctx, `${CARD_BASE}/selftrade/queryCardSelfTradeList`, {
+      pageNo: String(page),
+      pageSize: String(size),
+    });
+    const payload = await response.json();
+    if (payload?.success === false) {
+      throw new Error(`card transactions failed: ${payload.message || "invalid response"}`);
+    }
+    const resultData = payload?.resultData;
+    const rows = Array.isArray(resultData)
+      ? resultData
+      : Array.isArray(resultData?.rows)
+        ? resultData.rows
+        : null;
+    if (!rows) throw new Error("card.transactions: invalid response");
+
+    const out = {
+      cardNumber: account.cardNumber,
+      page,
+      size,
+      items: rows.map(mapCardTransaction),
+    };
+    const total = toOptionalNonNegativeInteger(resultData?.total ?? payload?.total);
+    if (total != null) {
+      out.total = total;
+      out.hasNext = page * size < total;
+    }
+    return out;
+  },
 };
+
+async function fetchCardAccount(ctx) {
+  const response = await ctx.fetch(`${CARD_BASE}/myaccount/openMyAccount`);
+  if (!response.ok) throw new Error(`card account failed: HTTP ${response.status}`);
+  const html = await response.text();
+  const doc = parseDocument(html);
+  const body = selectAll("body", doc)[0];
+  const text = getText(body || doc).replace(/\s+/g, " ").trim();
+  if (!text || /统一身份认证|authserver\/login/i.test(text)) {
+    throw new Error("card account failed: authentication required");
+  }
+
+  const cardNumber = firstCapture(text, [
+    /(?:校园卡号|卡号|卡账户)\s*[：:]?\s*([A-Za-z0-9-]{4,32})/,
+    /(?:card\s*(?:number|no\.?))\s*[：:]?\s*([A-Za-z0-9-]{4,32})/i,
+  ]);
+  const balanceText = firstCapture(text, [
+    /(?:账户余额|卡余额|余额)\s*[：:]?\s*(?:CNY|RMB|¥|￥)?\s*(-?[0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /(?:CNY|RMB|¥|￥)\s*(-?[0-9][0-9,]*(?:\.\d{1,2})?)/i,
+  ]);
+  if (!cardNumber) throw new Error("card.balance: account page missing card number");
+  if (!balanceText) throw new Error("card.balance: account page missing balance");
+  return { cardNumber, balanceMinor: parseMoneyMinor(balanceText, true) };
+}
+
+function mapCardTransaction(row) {
+  const rawAmount = firstValue(row, ["txamt", "amount", "tradeAmount", "tranamt", "TRANAMT"]);
+  const amountText = asNonEmptyString(rawAmount);
+  if (!amountText) throw new Error("card.transactions: transaction missing amount");
+  const signedMinor = parseMoneyMinor(amountText, true);
+  const type = asNonEmptyString(
+    firstValue(row, ["tradeType", "txname", "type", "tradename", "tradeName"]),
+  );
+  const time = normalizeCardTime(
+    firstValue(row, ["txdate", "tradeTime", "time", "tradetime", "tradeDate"]),
+  );
+  const item = {
+    time,
+    amountMinor: Math.abs(signedMinor),
+    currency: "CNY",
+    direction: cardDirection(type, signedMinor),
+  };
+  const merchant = asNonEmptyString(firstValue(row, ["mername", "merchant", "merchantName"]));
+  if (merchant) item.merchant = merchant;
+  const location = asNonEmptyString(firstValue(row, ["location", "place", "address"]));
+  if (location) item.location = location;
+  const transactionId = asNonEmptyString(firstValue(row, ["id", "tradeId", "transactionId"]));
+  if (transactionId) item.transactionId = transactionId;
+  const balanceAfter = firstValue(row, ["balance", "balanceAfter", "cardBalance"]);
+  if (balanceAfter != null && asNonEmptyString(balanceAfter)) {
+    item.balanceAfterMinor = parseMoneyMinor(balanceAfter, true);
+  }
+  return item;
+}
+
+function firstValue(source, keys) {
+  if (!source || typeof source !== "object") return null;
+  for (const key of keys) {
+    if (source[key] != null && source[key] !== "") return source[key];
+  }
+  return null;
+}
+
+function firstCapture(text, patterns) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[1];
+  }
+  return "";
+}
+
+function parseMoneyMinor(value, allowNegative) {
+  const normalized = String(value).trim().replace(/[\s,￥¥]/g, "");
+  const match = normalized.match(/^(-)?(\d+)(?:\.(\d{1,2}))?$/);
+  if (!match || (!allowNegative && match[1])) {
+    throw new Error(`invalid money amount: ${value}`);
+  }
+  const fraction = (match[3] || "").padEnd(2, "0");
+  const minor = Number(match[2]) * 100 + Number(fraction);
+  if (!Number.isSafeInteger(minor)) throw new Error(`money amount out of range: ${value}`);
+  return match[1] ? -minor : minor;
+}
+
+function normalizeCardTime(value) {
+  const text = asNonEmptyString(value);
+  if (!text) throw new Error("card.transactions: transaction missing time");
+  const local = text.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})[ T]?(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (local) {
+    const [, year, month, day, hour, minute, second = "00"] = local;
+    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`).toISOString();
+  }
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) throw new Error(`card.transactions: invalid time ${text}`);
+  return parsed.toISOString();
+}
+
+function cardDirection(type, signedMinor) {
+  if (/退款/.test(type)) return "refund";
+  if (/冲正|撤销/.test(type)) return "reversal";
+  if (/补助|补贴/.test(type)) return "subsidy";
+  if (/充值|入账|转入|收入/.test(type)) return "credit";
+  if (/消费|扣款|支出/.test(type)) return "debit";
+  if (signedMinor < 0) return "debit";
+  if (signedMinor > 0) return "credit";
+  return "unknown";
+}
+
+function toOptionalNonNegativeInteger(value) {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 0 ? number : null;
+}
 
 function parseNoticeHtml(html) {
   try {
