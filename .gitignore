@@ -5,4 +5,8 @@ dist/
 *.log
 .DS_Store
 
+# 核心仓的本地分析产物：core 侧已 gitignore，但镜像脚本按目录整棵复制会带进 vendor/。
+# 公开仓不收这批产物（~6 MB，非契约面）。
+graphify-out/
+
 adapters_tests/

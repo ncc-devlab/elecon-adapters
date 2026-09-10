@@ -1,8 +1,8 @@
 /**
  * Adapter SDK 类型声明（供 adapter 编写者参考，非运行期依赖）
  *
- * 同一份 adapter 在客户端（QuickJS）与服务端（QuickJS-wasm）以相同语义被调用——
- * 两端是同一个 QuickJS 引擎，零语义漂移（见 docs/adr/adr_005_runtime.md）。
+ * 同一份 adapter 在客户端（QuickJS）与服务端（QuickJS-wasm）以相同宿主契约被调用；
+ * 两种绑定、版本和编译配置的已使用语义由共享 golden/canary 约束（ADR-008 §3.2）。
  * 请求图由每 capability 的 `requestGraph` 决定（declarative | imperative；ADR-022）。
  */
 
@@ -93,6 +93,12 @@ interface EnvelopeFreshness {
   stale: boolean;
 }
 
+/**
+ * 数据信封（data envelope，`elecon.envelope`，ADR-001 §3.3）——运行期包裹归一化数据的外层对象。
+ *
+ * 与 adapter 分发用的 **bundle 信封**（签名对象，ADR-018 §2.9.1）无关，只是撞名；
+ * 三个同名概念的消歧见 ADR-000 §2.3.1。
+ */
 interface Envelope<T> {
   schema: string;
   schemaVersion: string;
