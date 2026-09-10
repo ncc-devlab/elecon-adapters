@@ -1,0 +1,34 @@
+{
+  "_note": "脱敏当前学期成绩 fixture。覆盖省略 term 时先查询当前学期，而不是从历史成绩首行推断。",
+  "capability": "grades.list",
+  "params": {},
+  "kind": "imperative-replay",
+  "responses": [
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"dqxnxq\":{\"rows\":[{\"DM\":\"2025-2026-2\"}]}}}"
+    },
+    { "status": 200, "headers": {}, "body": "" },
+    {
+      "status": 200,
+      "headers": { "content-type": "application/json" },
+      "body": "{\"datas\":{\"xscjcx\":{\"extParams\":{\"code\":\"1\"},\"rows\":[{\"XNXQDM\":\"2025-2026-2\",\"JXBID\":\"CLASS-CURRENT\",\"XSKCM\":\"当前学期示例课程\",\"XF\":2,\"ZCJ\":85,\"XGXKLBDM_DISPLAY\":\"选修\"}]}}}"
+    }
+  ],
+  "assertions": { "requestCount": 4, "methods": ["GET", "POST", "GET", "POST"] },
+  "expected": {
+    "term": "2025-2026-2",
+    "items": [
+      {
+        "courseId": "CLASS-CURRENT",
+        "courseName": "当前学期示例课程",
+        "credit": 2,
+        "score": { "kind": "numeric", "value": 85, "max": 100 },
+        "category": "elective",
+        "status": "final"
+      }
+    ]
+  }
+}

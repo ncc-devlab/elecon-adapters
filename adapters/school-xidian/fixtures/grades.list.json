@@ -8,7 +8,7 @@
     {
       "status": 200,
       "headers": { "content-type": "application/json" },
-      "body": "{\"datas\":{\"xscjcx\":{\"extParams\":{\"code\":1},\"rows\":[{\"XNXQDM\":\"2025-2026-2\",\"JXBID\":\"CLASS-EXAMPLE\",\"XSKCM\":\"示例课程\",\"XF\":3,\"ZCJ\":92,\"XGXKLBDM_DISPLAY\":\"必修\"}]}}}"
+      "body": "{\"datas\":{\"xscjcx\":{\"extParams\":{\"code\":1},\"rows\":[{\"XNXQDM\":\"2025-2026-2\",\"JXBID\":\"CLASS-EXAMPLE\",\"XSKCM\":\"示例课程\",\"XF\":3,\"ZCJ\":null,\"XGXKLBDM_DISPLAY\":\"必修\"}]}}}"
     }
   ],
   "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
@@ -19,7 +19,7 @@
         "courseId": "CLASS-EXAMPLE",
         "courseName": "示例课程",
         "credit": 3,
-        "score": { "kind": "numeric", "value": 92, "max": 100 },
+        "score": { "kind": "unknown", "value": null, "status": "notReleased" },
         "category": "required",
         "status": "final"
       }

@@ -1,20 +1,20 @@
 {
-  "_note": "脱敏课表输出 fixture。覆盖 1-4 周连续段（week=3 命中）。单双周/多段由核心 smoke 用 fake transport 覆盖；真实 IDS cookie 与个人课程不得提交。",
+  "_note": "脱敏课表输出 fixture。覆盖同一课程混合单双周分段，以及区间后附加单点周次；真实 IDS cookie 与个人课程不得提交。",
   "capability": "schedule.week",
-  "params": { "term": "2025-2026-2", "week": 3 },
+  "params": { "term": "2025-2026-2", "week": 7 },
   "kind": "imperative-replay",
   "responses": [
     { "status": 200, "headers": {}, "body": "" },
     {
       "status": 200,
       "headers": { "content-type": "application/json" },
-      "body": "{\"datas\":{\"xskcb\":{\"extParams\":{\"code\":1},\"rows\":[{\"SKZC\":\"1-4周\",\"SKXQ\":1,\"KSJC\":\"1\",\"JSJC\":\"2\",\"KCM\":\"示例课程\",\"KCH\":\"COURSE-EXAMPLE\",\"SKJS\":\"示例教师\",\"JASMC\":\"示例教学楼\"}]}}}"
+      "body": "{\"datas\":{\"xskcb\":{\"extParams\":{\"code\":1},\"rows\":[{\"SKZC\":\"1-8周(单),2-8周(双)\",\"SKXQ\":1,\"KSJC\":\"1\",\"JSJC\":\"2\",\"KCM\":\"混合单双周课程\",\"KCH\":\"COURSE-MIXED\",\"SKJS\":\"示例教师\",\"JASMC\":\"示例教学楼\"},{\"SKZC\":\"1-4周,7周\",\"SKXQ\":2,\"KSJC\":\"3\",\"JSJC\":\"4\",\"KCM\":\"区间加单周课程\",\"KCH\":\"COURSE-SINGLE\",\"SKJS\":\"\",\"JASMC\":\"\"}]}}}"
     }
   ],
   "assertions": { "requestCount": 2, "methods": ["GET", "POST"] },
   "expected": {
     "term": "2025-2026-2",
-    "week": 3,
+    "week": 7,
     "days": [
       {
         "dayOfWeek": 1,
@@ -22,11 +22,25 @@
           {
             "start": "1",
             "end": "2",
-            "courseName": "示例课程",
-            "courseId": "COURSE-EXAMPLE",
+            "courseName": "混合单双周课程",
+            "courseId": "COURSE-MIXED",
             "teacher": "示例教师",
             "location": "示例教学楼",
-            "weeks": [1, 2, 3, 4]
+            "weeks": [1, 2, 3, 4, 5, 6, 7, 8]
+          }
+        ]
+      },
+      {
+        "dayOfWeek": 2,
+        "slots": [
+          {
+            "start": "3",
+            "end": "4",
+            "courseName": "区间加单周课程",
+            "courseId": "COURSE-SINGLE",
+            "teacher": "",
+            "location": "",
+            "weeks": [1, 2, 3, 4, 7]
           }
         ]
       }

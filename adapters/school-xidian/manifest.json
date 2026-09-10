@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.4.0",
+  "adapterVersion": "0.4.1",
   "schoolId": "xidian",
   "displayName": "西安电子科技大学",
   "trustTier": "official",
@@ -19,8 +19,7 @@
     "navigationAllow": [
       "https://ids.xidian.edu.cn/*",
       "https://ehall.xidian.edu.cn/*",
-      "https://v8scan.xidian.edu.cn/*",
-      "https://xxcapp.xidian.edu.cn/*"
+      "https://v8scan.xidian.edu.cn/*"
     ],
     "success": {
       "whenUrlMatches": [

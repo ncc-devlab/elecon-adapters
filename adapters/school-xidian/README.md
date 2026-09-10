@@ -1,12 +1,13 @@
 # school-xidian（西安电子科技大学）
 
-**状态：公开通知、课表、本科成绩/考试/空教室已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
+**状态：公开通知、课表、本科成绩/考试/空教室及开发态一卡通已有脱敏 fixture 与核心凭据注入 smoke，尚未签名发布。**
 
 - **公开数据**：教务处 `notice.list`（**declarative**，emits `elecon.notice.list@1.1`）。
 - **登录数据（imperative）**：IDS 登录后的 E-Hall `schedule.week`、本科 `grades.list`、`exam.list`、`classroom.buildings` / `classroom.available`（ADR-019）。
+- **一卡通（imperative，开发态）**：`card.balance` / `card.transactions` 使用核心托管的 `openid` query credential；真实页面字段仍待人工校准。
 - **成绩边界**：研究生成绩平台跨域 SSO 暂不接入。
 - **登录边界**：核心 WebView 托管 IDS 登录；adapter 只声明 `ehall-session` cookie scope，不接触用户名、密码或 cookie 值。
-- **域名白名单**：教务处、IDS、E-Hall（见 `manifest.json` `network.allow`）。
+- **域名白名单**：教务处、IDS、E-Hall、一卡通 v8scan（见 `manifest.json` `network.allow`）。
 
 ## 已知坑
 
@@ -28,7 +29,7 @@ npm run check
 npm run bundle -- --adapter=school-xidian
 
 # 核心仓（兄弟目录）凭据注入 smoke
-cd ../elecon/server && npm run smoke:xidian-schedule && npm run smoke:xidian-grades && npm run smoke:xidian-exams && npm run smoke:xidian-classroom
+cd ../elecon/server && ELECON_ADAPTERS_REPO=../../elecon-adapters npm run smoke:xidian-schedule && ELECON_ADAPTERS_REPO=../../elecon-adapters npm run smoke:xidian-grades && ELECON_ADAPTERS_REPO=../../elecon-adapters npm run smoke:xidian-exams && ELECON_ADAPTERS_REPO=../../elecon-adapters npm run smoke:xidian-classroom && ELECON_ADAPTERS_REPO=../../elecon-adapters npm run smoke:xidian-card
 ```
 
 核心 smoke 使用脱敏 fake transport，至少应断言 E-Hall 请求带有凭证 Cookie、adapter 收不到
@@ -36,9 +37,9 @@ cd ../elecon/server && npm run smoke:xidian-schedule && npm run smoke:xidian-gra
 
 ## 夹具
 
-`fixtures/` 放脱敏后的 notice / schedule / grades / exam / classroom 期望输出。脱敏要求见 `adapters/README.md` 与 tools PII scanner。
+`fixtures/` 放脱敏后的 notice / schedule / grades / exam / classroom / card 期望输出。脱敏要求见 `adapters/README.md` 与 tools PII scanner。
 
 ## 待办
 
 - 滑块求解、用户名密码和真实登录仍由核心/人工流程负责，不得复制进 adapter。
-- **候选扩展**（card / library / energy）：字段映射、schema 缺口与**人工审阅清单**见 [`COVERAGE.md`](./COVERAGE.md)。当前 milestone 不接 energy；card 依赖核心 openid 裁定。
+- **候选扩展**（library / energy）：字段映射、schema 缺口与**人工审阅清单**见 [`COVERAGE.md`](./COVERAGE.md)。当前 milestone 不接 energy；card 在真机字段校准前保持开发态。

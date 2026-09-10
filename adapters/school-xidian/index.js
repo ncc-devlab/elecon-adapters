@@ -32,51 +32,66 @@ const EXAM_TIME_PG =
 export const capabilities = {
   // 公开通知：无凭证、纯 HTML 解析 → declarative（能力面最薄，红线 #5）。
   // 核心按 manifest.requests 代取 `page` 并脱敏后传入；本函数必须同步（无 I/O / 无 Promise）。
-  "notice.list": (ctx, _params, responses) => parseNoticeHtml(responses.page.body),
+  "notice.list": (ctx, params, responses) => {
+    const page = params?.page ?? 1;
+    if (!Number.isInteger(page) || page < 1) {
+      throw new Error("notice.list: params.page 必须是正整数");
+    }
+    if (page !== 1) throw new Error("notice.list: 当前来源仅支持第 1 页");
+    const size = params?.size;
+    if (size != null && (!Number.isInteger(size) || size < 1)) {
+      throw new Error("notice.list: params.size 必须是正整数");
+    }
+    const result = parseNoticeHtml(responses.page.body);
+    if (params?.category && params.category !== "academic") result.items = [];
+    if (size != null) result.items = result.items.slice(0, size);
+    return result;
+  },
 
   "schedule.week": async (ctx, params) => {
     const week = params?.week;
     if (!Number.isInteger(week) || week < 1) {
       throw new Error("schedule.week: params.week 必须是正整数");
     }
-    const term = params.term || (await getCurrentTerm(ctx));
     await openScheduleApp(ctx);
+    const term = params.term || (await getCurrentTerm(ctx));
     const response = await postForm(ctx, `${SCHEDULE_APP}/jwapp/sys/wdkb/modules/xskcb/xskcb.do`, {
       XNXQDM: term,
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, "schedule query");
     const result = payload?.datas?.xskcb;
-    if (!result || result.extParams?.code !== 1) {
+    if (!result || Number(result.extParams?.code) !== 1) {
       throw new Error(`schedule query failed: ${result?.extParams?.msg || "invalid response"}`);
     }
     return { term, week, days: groupCourses(result.rows || [], week) };
   },
 
   "grades.list": async (ctx, params) => {
+    if (!params?.term) await openScheduleApp(ctx);
+    const term = params?.term || (await getCurrentTerm(ctx));
     await openApp(ctx, GRADES_APP_ID);
     const response = await postForm(ctx, `${SCHEDULE_APP}/jwapp/sys/cjcx/modules/cjcx/xscjcx.do`, {
       "*json": "1",
-      querySetting: JSON.stringify({
-        name: "SFYX",
-        value: "1",
-        linkOpt: "and",
-        builder: "m_value_equal",
-      }),
+      querySetting: JSON.stringify([
+        { name: "SFYX", value: "1", linkOpt: "and", builder: "m_value_equal" },
+        { name: "XNXQDM", value: term, linkOpt: "and", builder: "m_value_equal" },
+      ]),
       "*order": "+XNXQDM,KCH,KXH",
       pageSize: "1000",
       pageNumber: "1",
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, "grades query");
     const result = payload?.datas?.xscjcx;
-    if (!result || result.extParams?.code !== 1) {
+    if (!result || Number(result.extParams?.code) !== 1) {
       throw new Error(`grades query failed: ${result?.extParams?.msg || "invalid response"}`);
     }
-    const rows = result.rows || [];
-    const term = params?.term || String(rows[0]?.XNXQDM || "");
-    return { term, items: rows.filter((row) => !term || row.XNXQDM === term).map(mapGrade) };
+    if (!Array.isArray(result.rows)) throw new Error("grades query failed: rows missing");
+    assertCompletePage(result, result.rows, "grades query");
+    return { term, items: result.rows.filter((row) => String(row.XNXQDM || "") === term).map(mapGrade) };
   },
 
   "exam.list": async (ctx, params) => {
+    if (!params?.term) await openScheduleApp(ctx);
     const term = params?.term || (await getCurrentTerm(ctx));
     await openApp(ctx, EXAM_APP_ID);
     const response = await postForm(
@@ -89,12 +104,14 @@ export const capabilities = {
         "*order": "-KSRQ,-KSSJMS",
       },
     );
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, "exam query");
     const result = payload?.datas?.wdksap;
-    if (!result || result.extParams?.code !== 1) {
+    if (!result || Number(result.extParams?.code) !== 1) {
       throw new Error(`exam query failed: ${result?.extParams?.msg || "invalid response"}`);
     }
-    return { term, items: (result.rows || []).map(mapExam) };
+    if (!Array.isArray(result.rows)) throw new Error("exam query failed: rows missing");
+    assertCompletePage(result, result.rows, "exam query");
+    return { term, items: result.rows.map(mapExam) };
   },
 
   "classroom.buildings": async (ctx, params) => {
@@ -102,11 +119,7 @@ export const capabilities = {
     const buildings = await fetchBuildingList(ctx);
     let items = buildings;
     const campus = asNonEmptyString(params?.campus);
-    if (campus) {
-      items = items.filter(
-        (b) => b.campus === campus || b.building.includes(campus) || b.buildingId.includes(campus),
-      );
-    }
+    if (campus) items = filterBuildingsByCampus(items, campus);
     const out = { items };
     if (campus) out.campus = campus;
     if (asNonEmptyString(params?.term)) out.term = params.term;
@@ -115,8 +128,13 @@ export const capabilities = {
 
   "classroom.available": async (ctx, params) => {
     const date = asNonEmptyString(params?.date);
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!isValidCalendarDate(date)) {
       throw new Error("classroom.available: params.date 必须是 YYYY-MM-DD");
+    }
+    for (const field of ["week", "weekday", "start", "end", "timeZone"]) {
+      if (params?.[field] != null) {
+        throw new Error(`classroom.available: 当前来源不支持 params.${field}`);
+      }
     }
     const buildingIdParam = asNonEmptyString(params?.buildingId);
     const buildingNameParam = asNonEmptyString(params?.building);
@@ -124,11 +142,14 @@ export const capabilities = {
       throw new Error("classroom.available: 需要 params.buildingId 或 params.building");
     }
 
+    if (!asNonEmptyString(params?.term)) await openScheduleApp(ctx);
     const term = asNonEmptyString(params?.term) || (await getCurrentTerm(ctx));
     const { semesterRange, semesterPart } = splitTerm(term);
     await openApp(ctx, CLASSROOM_APP_ID);
 
-    const buildings = await fetchBuildingList(ctx);
+    let buildings = await fetchBuildingList(ctx);
+    const campus = asNonEmptyString(params?.campus);
+    if (campus) buildings = filterBuildingsByCampus(buildings, campus);
     const building = resolveBuilding(buildings, buildingIdParam, buildingNameParam);
     if (!building) {
       throw new Error(
@@ -157,11 +178,13 @@ export const capabilities = {
       pageSize: "999",
       pageNumber: "1",
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, "classroom query");
     const result = payload?.datas?.cxjsqk;
-    if (!result) {
-      throw new Error("classroom query failed: invalid response");
+    if (!result || (result.extParams && Number(result.extParams.code) !== 1)) {
+      throw new Error(`classroom query failed: ${result?.extParams?.msg || "invalid response"}`);
     }
+    if (!Array.isArray(result.rows)) throw new Error("classroom query failed: rows missing");
+    assertCompletePage(result, result.rows, "classroom query");
 
     const sectionStart = normalizeSectionBound(params?.sectionStart, 1);
     const sectionEnd = normalizeSectionBound(params?.sectionEnd, CLASSROOM_SECTION_COUNT);
@@ -172,7 +195,7 @@ export const capabilities = {
     const roomFilter = asNonEmptyString(params?.room);
     const roomIdFilter = asNonEmptyString(params?.roomId);
 
-    let items = (result.rows || []).map((row) =>
+    let items = result.rows.map((row) =>
       mapClassroomRow(row, building, sectionStart, sectionEnd),
     );
     if (roomIdFilter) {
@@ -205,6 +228,9 @@ export const capabilities = {
   },
 
   "card.transactions": async (ctx, params) => {
+    if (params?.from != null || params?.to != null) {
+      throw new Error("card.transactions: 当前来源不支持 from/to 时间窗口");
+    }
     const page = params?.page ?? 1;
     const size = params?.size ?? 20;
     if (!Number.isInteger(page) || page < 1) {
@@ -219,7 +245,7 @@ export const capabilities = {
       pageNo: String(page),
       pageSize: String(size),
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, "card transactions");
     if (payload?.success === false) {
       throw new Error(`card transactions failed: ${payload.message || "invalid response"}`);
     }
@@ -287,6 +313,7 @@ function mapCardTransaction(row) {
     currency: "CNY",
     direction: cardDirection(type, signedMinor),
   };
+  if (type && item.direction === "unknown") item.type = type;
   const merchant = asNonEmptyString(firstValue(row, ["mername", "merchant", "merchantName"]));
   if (merchant) item.merchant = merchant;
   const location = asNonEmptyString(firstValue(row, ["location", "place", "address"]));
@@ -348,7 +375,6 @@ function cardDirection(type, signedMinor) {
   if (/充值|入账|转入|收入/.test(type)) return "credit";
   if (/消费|扣款|支出/.test(type)) return "debit";
   if (signedMinor < 0) return "debit";
-  if (signedMinor > 0) return "credit";
   return "unknown";
 }
 
@@ -363,9 +389,9 @@ function parseNoticeHtml(html) {
     const doc = parseDocument(html);
     const tits = selectAll("div.tit", doc);
     const noticeTit = tits.find((el) => getText(el).includes("通知公告"));
-    if (!noticeTit) return { items: [] };
+    if (!noticeTit) throw new Error("expected notice container");
     const ul = nextElementSibling(noticeTit);
-    if (!ul) return { items: [] };
+    if (!ul) throw new Error("expected notice list");
 
     const items = [];
     for (const li of selectAll("li", ul)) {
@@ -421,7 +447,7 @@ function mapGrade(row) {
   const score = Number.isFinite(numericScore) && scoreText !== ""
     ? { kind: "numeric", value: numericScore, max: 100 }
     : scoreText === ""
-      ? { kind: "unknown" }
+      ? { kind: "unknown", value: null, status: "notReleased" }
       : { kind: isPassFail(rawScore) ? "passfail" : "letter", value: scoreText };
   const classStatus = String(row.XGXKLBDM_DISPLAY || row.KCXZDM_DISPLAY || "");
   return {
@@ -436,9 +462,10 @@ function mapGrade(row) {
 
 function mapExam(row) {
   const examAt = parseExamAt(row.KSSJMS);
+  const cancelled = /cancel|取消/i.test(String(row.KSSJMS || ""));
   const item = {
     courseName: String(row.KCM ?? ""),
-    status: examAt ? "scheduled" : "unknown",
+    status: cancelled ? "cancelled" : examAt ? "scheduled" : "unknown",
   };
   const courseId = String(row.KCH || row.JXBID || "").trim();
   if (courseId) item.courseId = courseId;
@@ -472,8 +499,8 @@ function splitTerm(term) {
 function normalizeSectionBound(value, fallback) {
   if (value == null || value === "") return fallback;
   const n = Number(value);
-  if (!Number.isInteger(n) || n < 1 || n > 24) {
-    throw new Error(`classroom.available: 节次须为 1–24 的整数，收到 ${value}`);
+  if (!Number.isInteger(n) || n < 1 || n > CLASSROOM_SECTION_COUNT) {
+    throw new Error(`classroom.available: 节次须为 1–${CLASSROOM_SECTION_COUNT} 的整数，收到 ${value}`);
   }
   return n;
 }
@@ -482,25 +509,38 @@ async function fetchBuildingList(ctx) {
   const response = await postForm(ctx, `${CLASSROOM_BASE}/jxlcx.do`, {
     "*order": "+XXXQDM,+PX,+JXLDM",
   });
-  const payload = await response.json();
+  const payload = await readJsonResponse(response, "classroom.buildings");
   const rows = payload?.datas?.jxlcx?.rows;
   if (!Array.isArray(rows)) {
     throw new Error("classroom.buildings: invalid response");
   }
-  return rows.map((row) => {
-    const buildingId = asNonEmptyString(row.JXLDM) || "-";
+  const buildings = [];
+  for (const row of rows) {
+    const buildingId = asNonEmptyString(row.JXLDM);
+    if (!buildingId) continue;
     const building = asNonEmptyString(row.JXLJC) || asNonEmptyString(row.JXLMC) || "-";
     const item = { building, buildingId };
     const campus = asNonEmptyString(row.XXXQMC) || asNonEmptyString(row.XXXQDM);
     if (campus) item.campus = campus;
-    return item;
-  });
+    buildings.push(item);
+  }
+  return buildings;
+}
+
+function filterBuildingsByCampus(buildings, campus) {
+  return buildings.filter(
+    (building) =>
+      building.campus === campus ||
+      building.building.includes(campus) ||
+      building.buildingId.includes(campus),
+  );
 }
 
 function resolveBuilding(buildings, buildingId, buildingName) {
   if (buildingId) {
     const byId = buildings.find((b) => b.buildingId === buildingId);
     if (byId) return byId;
+    return null;
   }
   if (buildingName) {
     const exact = buildings.find((b) => b.building === buildingName);
@@ -509,12 +549,6 @@ function resolveBuilding(buildings, buildingId, buildingName) {
       (b) => b.building.includes(buildingName) || buildingName.includes(b.building),
     );
     if (partial) return partial;
-  }
-  if (buildingId) {
-    return {
-      building: buildingName || buildingId,
-      buildingId,
-    };
   }
   return null;
 }
@@ -525,7 +559,7 @@ async function dateToWeekWeekday(ctx, date, semesterRange, semesterPart) {
     XN: semesterRange,
     XQ: semesterPart,
   });
-  const payload = await response.json();
+  const payload = await readJsonResponse(response, "classroom date conversion");
   const data = payload?.datas?.rqzhzcjc;
   const week = Number(data?.ZC);
   const weekday = Number(data?.XQJ);
@@ -584,7 +618,10 @@ function parseExamAt(value) {
 
 function toNumber(value) {
   const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? number : 0;
+  if (!Number.isFinite(number) || number < 0) {
+    throw new Error(`grades query failed: invalid credit ${value}`);
+  }
+  return number;
 }
 
 function isPassFail(value) {
@@ -592,9 +629,8 @@ function isPassFail(value) {
 }
 
 async function getCurrentTerm(ctx) {
-  await openScheduleApp(ctx);
   const response = await postForm(ctx, `${SCHEDULE_APP}/jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do`, {});
-  const payload = await response.json();
+  const payload = await readJsonResponse(response, "current term query");
   const term = payload?.datas?.dqxnxq?.rows?.[0]?.DM;
   if (!term) throw new Error("schedule: current term missing");
   return term;
@@ -611,6 +647,41 @@ async function postForm(ctx, url, fields) {
   });
   if (!response.ok) throw new Error(`request failed: HTTP ${response.status}`);
   return response;
+}
+
+async function readJsonResponse(response, label) {
+  if (!response.ok) throw new Error(`${label} failed: HTTP ${response.status}`);
+  const text = await response.text();
+  if (/^\s*</.test(text)) {
+    if (/统一身份认证|authserver\/login|reAuthLoginView/i.test(text)) {
+      throw new Error(`${label} failed: authentication required`);
+    }
+    throw new Error(`${label} failed: unexpected HTML response`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${label} failed: invalid JSON response`);
+  }
+}
+
+function assertCompletePage(result, rows, label) {
+  const total = toOptionalNonNegativeInteger(result?.total ?? result?.totalSize ?? result?.totalCount);
+  if (total != null && total > rows.length) {
+    throw new Error(`${label} failed: paginated response is incomplete (${rows.length}/${total})`);
+  }
+}
+
+function isValidCalendarDate(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1) return false;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= days[month - 1];
 }
 
 function groupCourses(rows, week) {
@@ -644,44 +715,34 @@ function parseWeeks(value) {
   const text = String(value || "").trim();
   if (!text) return [];
 
-  const globalOdd = /单周|[（(]单[)）]|奇数周/.test(text);
-  const globalEven = /双周|[（(]双[)）]|偶数周/.test(text);
-  // 单双互斥时以「单」优先，避免脏字符串两边都命中。
-  const forceOdd = globalOdd && !globalEven ? true : globalOdd && globalEven ? true : false;
-  const forceEven = globalEven && !globalOdd;
-
   const weeks = new Set();
   const segments = text.split(/[,，、;；]/).map((s) => s.trim()).filter(Boolean);
 
   for (const segment of segments) {
-    const segOdd = forceOdd || /单周|[（(]单[)）]/.test(segment);
-    const segEven = forceEven || /双周|[（(]双[)）]/.test(segment);
+    const segOdd = /单周|[（(]单[)）]|奇数周/.test(segment);
+    const segEven = /双周|[（(]双[)）]|偶数周/.test(segment);
     const parity = segOdd && !segEven ? "odd" : segEven && !segOdd ? "even" : "all";
 
-    let matchedRange = false;
     const rangeRe = /(\d+)\s*[-~～至到]\s*(\d+)/g;
     let match;
     while ((match = rangeRe.exec(segment)) !== null) {
-      matchedRange = true;
       const start = Number(match[1]);
       const end = Number(match[2]);
       if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start) continue;
-      const last = Math.min(end, 32);
-      for (let week = start; week <= last; week += 1) {
+      for (let week = start; week <= end; week += 1) {
         if (parity === "odd" && week % 2 === 0) continue;
         if (parity === "even" && week % 2 === 1) continue;
         weeks.add(week);
       }
     }
 
-    if (!matchedRange) {
-      for (const raw of segment.match(/\d+/g) || []) {
-        const week = Number(raw);
-        if (!Number.isInteger(week) || week < 1 || week > 32) continue;
-        if (parity === "odd" && week % 2 === 0) continue;
-        if (parity === "even" && week % 2 === 1) continue;
-        weeks.add(week);
-      }
+    const singles = segment.replace(rangeRe, " ").match(/\d+/g) || [];
+    for (const raw of singles) {
+      const week = Number(raw);
+      if (!Number.isInteger(week) || week < 1) continue;
+      if (parity === "odd" && week % 2 === 0) continue;
+      if (parity === "even" && week % 2 === 1) continue;
+      weeks.add(week);
     }
   }
 
