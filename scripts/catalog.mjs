@@ -3,6 +3,16 @@ import addFormats from "ajv-formats";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+/**
+ * 本地 catalog 生成 / 校验。
+ *
+ * `digest` 取自 `npm run bundle` 的 `.sha256`，为 **elecon-bundle/2** digest
+ * （`SHA-256(envelopeBytes)`，ADR-018 §2.9.1），与核心 signer 一致。`url` 指向的是**签名后**由
+ * 核心流水线发布的传输封套（`<stem>.json.gz`）——本仓产出的是 `<stem>.unsigned.json.gz`，
+ * 两者不是同一个文件。
+ *
+ * 本地 catalog 未签名，仅供离线自查；发布用的 signed catalog 由核心流水线生成（ADR-018 §2.8）。
+ */
 const catalogPath = "dist/catalog.json";
 if (process.argv.includes("--write")) {
   const baseUrl = process.env.CATALOG_BASE_URL;

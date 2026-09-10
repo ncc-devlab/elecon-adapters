@@ -76,10 +76,23 @@ ADR-022 起，**模式是能力级的**（不再是全 adapter 一个 `mode`）�
 - **编译与越权**：`npm run check` 会编译每个 entry，拒绝非 `elecon:html` import，并拒绝纯解析能力的网络、凭证和动态执行 API。
 - **catalog**：catalog 必须通过 schema 和 capability registry 校验。
 - **bundle/digest**：本仓库只生成 unsigned 交接物，发布前重新计算 digest 并完成签名。
+- **bundle 可打包**：`npm run bundle` 在本地执行签发侧闸门——目录里**每个文件**要么进 envelope、
+  要么落在 `BUNDLE_EXCLUDE` 显式排除名单里（`*.md` / `fixtures/` 已在名单内），否则拒签；
+  运行时文件必须是 **LF 换行 + Unicode NFC**，不符**不再被静默改写**，而是直接拒签。
 
 ## 合并之后
 
-维护者做行为复核 → 离线签名 → release catalog → CDN 分发。签名前须确认 bundle 身份来自 envelope 内 manifest，且重算 digest 与 unsigned 交接物一致。**签名 / 分发不在本仓库，本仓库 CI 无签名能力**。
+维护者做行为复核 → 离线签名 → release catalog → CDN 分发。签名前须确认 bundle 身份来自 bundle 信封内 manifest，且重算 digest 与 unsigned 交接物一致。**签名 / 分发不在本仓库，本仓库 CI 无签名能力**。
+
+> **术语：仓内的「envelope / 信封」有三个互不相干的含义**（核心仓 ADR-000 §2.3.1；外部贡献者最容易在此撞车）：
+>
+> | 术语 | 是什么 | 在本仓何处出现 |
+> |---|---|---|
+> | **bundle 信封** | adapter 包的**清单 + 签名对象**，`bundleFormat: elecon-bundle/N` | `npm run bundle` 的产物；本仓只涉及这一个 |
+> | **数据信封** | 运行期包裹归一化数据的外包装，schema id `elecon.envelope`（`{schema, schemaVersion, source, freshness, data}`） | **adapter 不产出它**——由宿主在信任边界处包裹；adapter 只返回 `data` 的内容 |
+> | **信封加密** | DEK/KEK 两层密钥模型，用于核心侧凭证落盘 | 与本仓无关 |
+>
+> 承载 bundle 信封上线的三字段外层对象（`{ envelopeB64, signature, blobs }`）称 **传输封套（wire wrapper）**，不叫信封。
 
 ## imperative（命令式）慢车道
 
