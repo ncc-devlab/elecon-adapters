@@ -16,7 +16,7 @@
 |---|---|---|---|
 | `jwc/` | `notice.list` | 已接入 | 公开；脱敏 fixture |
 | `ehall/schedule.py` | `schedule.week` | 已接入 | `ehall-session` + smoke |
-| `ehall/scores.py` | `grades.list` | 已接入（本科） | 研究生成绩跨域 SSO 不接 |
+| `ehall/scores.py` | `grades.list` | 已接入（本科，契约 `@1.1`） | 研究生成绩跨域 SSO 不接；来源无绩点字段，见 §1b |
 | `ehall/exams.py` | `exam.list` | 已接入（本科） | `smoke:xidian-exams` |
 | `ehall/empty_classroom.py` | `classroom.buildings` / `classroom.available` | 已接入（本科） | ADR-019；`smoke:xidian-classroom` |
 | `card/balance.py` | `card.balance` / `card.transactions` | 已接入开发态 | ADR-020 query credential；`smoke:xidian-card`；真机字段仍待校准 |
@@ -82,7 +82,7 @@
 | 字段 | XIDIAN 行为 |
 |---|---|
 | `page` / `size` | 映射 `pageNo` / `pageSize`（推荐实现） |
-| `from` / `to` | **忽略**（接口不支持；schema 已注明可选） |
+| `from` / `to` | **显式拒绝**（接口不支持，禁止静默返回请求窗口外的流水） |
 
 `card.balance` 无独立 params schema（空对象即可）。
 
@@ -105,6 +105,38 @@ credentials.card-session = { scope: ["https://v8scan.xidian.edu.cn/*"], type: qu
 
 开发态实现对账户页缺失真实卡号/余额、流水缺失金额/时间一律 fail-closed，不使用学号或占位值冒充。
 字段映射兼容探针 `resultData.rows` 和上游当前 `resultData[]`，但正式发布前仍必须用人工脱敏响应校准。
+
+---
+
+## 1b. `grades.list` — 绩点尺度现状（契约 1.1）
+
+**状态：** `emits` 已对齐 `elecon.grades.list@1.1`；**`gradePointScale` / `gradePointSource` 均未声明**。
+
+契约 1.1（ADR-001 §3.5 改写，见核心仓 `contract/CHANGELOG.md` 2026-09-08 条）把**课程级绩点**判给
+adapter：可以由学校来源直接给出，也可以由 adapter 按校本换算表派生，两者用 `gradePointSource` 区分；
+列表级 `gradePointScale` 声明量纲，本体据此决定能否聚合 GPA。
+
+**西电当前一个绩点字段都拿不到。** ehall 成绩接口（`xscjcx.do`）返回的行里只有总成绩 `ZCJ`、学分 `XF`、
+课程性质等；核心仓探针 `adapters_tests/XIDIAN/ehall/scores.py` 的字段映射亦无绩点项。因此：
+
+| 字段 | 现状 | 理由 |
+|---|---|---|
+| `items[].gradePoint` | 不产出 | 来源无此字段 |
+| `items[].gradePointSource` | 不声明 | 无 `gradePoint` 可标注来源 |
+| `gradePointScale` | **不声明** | 该字段的语义是「本次数据中 `items[].gradePoint` 所用的尺度」。无一条 item 带 `gradePoint` 时声明尺度，是在为不存在的数背书 |
+
+**这不是遗漏，是 fail-closed 的正常结果**：本体的 GPA 展示按 ADR-001 §3.5 对尺度缺失 fail-closed，
+西电本就无绩点可聚合，行为无变化。
+
+**要让西电显示 GPA，只有两条正路**（都需人工先行，不得由实现方自行补齐）：
+
+1. **adapter 侧派生** —— 落地西电校本的分数→绩点换算表，产出 `gradePoint` 并标
+   `gradePointSource: "adapter-derived"`、`gradePointScale: "<实际制式>"`。
+   **阻塞点**：核心仓联动文档只写了「西电为 4.3 制，**需人工确认**」，换算表本身尚无权威来源。
+   换算表是**学校规章**，签进 official bundle 后错了会静默产出错误的绩点——**必须人工核定教务处口径后再落**，
+   不得按经验值凑。
+2. **接 `gpa.summary`** —— 取学校侧官方汇总（该 capability 已在 registry 注册，`@1.1` 起带
+   `gradePointScale`）。需先逆向西电是否有对应接口；本仓目前无任何 adapter 声明该 capability。
 
 ---
 
