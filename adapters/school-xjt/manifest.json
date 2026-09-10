@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xjt",
-  "adapterVersion": "0.1.0",
+  "adapterVersion": "0.1.1",
   "schoolId": "xjtu",
   "displayName": "西安交通大学（教务处通知）",
   "trustTier": "official",
