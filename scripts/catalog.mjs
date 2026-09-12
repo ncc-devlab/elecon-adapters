@@ -14,8 +14,8 @@ import { join } from "node:path";
  * 由客户端自持，与 catalog 无关——因此本脚本不再需要 `CATALOG_BASE_URL`。
  *
  * 本地 catalog 未签名，仅供离线自查；发布用的 signed catalog 由核心流水线生成（ADR-018 §2.8）。
- * `--check` 见到历史 catalog 里残留的 `url` 只告警（对齐核心 validator K3_deprecated_url），
- * 下一次签名仪式后 schema 删字段，届时转为拒绝。
+ * seq 9 仪式（2026-09-12）后 schema 已删 `url` 字段：entry 再含 `url` 即被上面的 schema 校验
+ * （`additionalProperties:false`）直接拒绝，不再另设告警。
  */
 const catalogPath = "dist/catalog.json";
 if (process.argv.includes("--write")) {
@@ -63,11 +63,6 @@ if (!valid) {
 }
 const registry = JSON.parse(readFileSync("vendor/contract/capability/registry.json", "utf8")).capabilities;
 for (const entry of JSON.parse(readFileSync(catalogPath, "utf8")).entries) {
-  if ("url" in entry) {
-    console.warn(
-      `⚠ K3_deprecated_url: ${entry.adapterId}@${entry.adapterVersion} 带已弃用的 url（catalog 只描述文件，ADR-018 §2.5.1）；请重跑 npm run catalog`,
-    );
-  }
   for (const capability of entry.capabilities) {
     if (!registry[capability]) throw new Error(`catalog: 未注册 capability '${capability}'`);
   }

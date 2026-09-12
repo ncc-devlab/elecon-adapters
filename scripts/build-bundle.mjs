@@ -7,7 +7,7 @@
  *
  * **本脚本不签名**：私钥与 signer 属私有核心（ADR-002 §2.3 / ADR-018 §2.8），公开仓永不持有。
  *
- * ## digest v2（`elecon-bundle/2`）
+ * ## digest v2（`elecon-bundle/3`）
  *
  * envelope 从「容器」降为「清单」：只放 descriptor（`path` / `size` / `sha256` + 顶层身份），
  * 文件字节改由**按内容哈希寻址**的 blob 表承载。
@@ -18,10 +18,17 @@
  * digest，而加载器按路径取入口与 `masker.json`，于是 official 签名可背书「受审时无害的资产文件被执行」。
  * v2 把路径、长度与内容一起钉进被签字节，从根上关掉这条路。
  *
+ * ## `/3` 断代（2026-09-12，ADR-026 §2.7.1）
+ *
+ * envelope 结构与 `/2` **完全相同**，断代只表达一件事：official bundle 自此**必须**携带根目录
+ * `masker.json`（`rules: []` 合法），且 host 加载时须把它接进 delivery firewall。任何只懂 `/2` 的
+ * host（含懂 v2 但没有 Masker 运行时门的 host）因 `bundleFormat` 严格相等自动拒载——「旧 host
+ * 采纳新 bundle 却忽略 masker.json」在结构上不可能发生。代价是一次重签仪式。
+ *
  * ## 与核心 signer 的一致性
  *
  * 核心侧 digest v2 已落地（`tools/src/bundle/envelope.ts`、`tools/src/signer/index.ts`、
- * `client/lib/core/loader/bundle.dart` 均为 `elecon-bundle/2`），**两侧 digest 一致**，
+ * `client/lib/core/loader/bundle.dart` 均为 `elecon-bundle/3`），**两侧 digest 一致**，
  * ADR-018 §2.10 门 1 第 5 项的「digest 预检」自此成立——本脚本的输出可直接与离线签发的实物比对。
  *
  * 这条一致性是**本脚本存在的全部理由**，因此以下规则必须与核心逐字保持同步；核心侧改动后须复核：
@@ -48,7 +55,7 @@ import { lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
-const BUNDLE_FORMAT = "elecon-bundle/2";
+const BUNDLE_FORMAT = "elecon-bundle/3";
 
 /** 参与签名的文件扩展名（核心 signer BUNDLE_INCLUDE）。 */
 const BUNDLE_INCLUDE = /\.(json|js|mjs|ts|html?|css|txt|svg|png)$/i;

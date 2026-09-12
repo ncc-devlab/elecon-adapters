@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-xidian",
-  "adapterVersion": "0.4.1",
+  "adapterVersion": "0.5.0",
   "schoolId": "xidian",
   "displayName": "西安电子科技大学",
   "trustTier": "official",

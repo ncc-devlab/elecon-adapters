@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.0",
   "adapterId": "school-fudan",
-  "adapterVersion": "0.1.1",
+  "adapterVersion": "0.2.0",
   "schoolId": "fudan",
   "displayName": "复旦大学（本科生院通知）",
   "trustTier": "official",
