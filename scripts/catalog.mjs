@@ -7,16 +7,21 @@ import { join } from "node:path";
  * 本地 catalog 生成 / 校验。
  *
  * `digest` 取自 `npm run bundle` 的 `.sha256`，为 **elecon-bundle/2** digest
- * （`SHA-256(envelopeBytes)`，ADR-018 §2.9.1），与核心 signer 一致。`url` 指向的是**签名后**由
- * 核心流水线发布的传输封套（`<stem>.json.gz`）——本仓产出的是 `<stem>.unsigned.json.gz`，
- * 两者不是同一个文件。
+ * （`SHA-256(envelopeBytes)`，ADR-018 §2.9.1），与核心 signer 一致。
+ *
+ * **catalog 只描述文件、不描述端点（ADR-018 §2.5.1，2026-09-11）**：entry 不再写 `url`。
+ * 签名后的传输封套由客户端按 `<base>/bundles/<digest>.json.gz` 内容寻址拉取，分发 base URL
+ * 由客户端自持，与 catalog 无关——因此本脚本不再需要 `CATALOG_BASE_URL`。
  *
  * 本地 catalog 未签名，仅供离线自查；发布用的 signed catalog 由核心流水线生成（ADR-018 §2.8）。
+ * `--check` 见到历史 catalog 里残留的 `url` 只告警（对齐核心 validator K3_deprecated_url），
+ * 下一次签名仪式后 schema 删字段，届时转为拒绝。
  */
 const catalogPath = "dist/catalog.json";
 if (process.argv.includes("--write")) {
-  const baseUrl = process.env.CATALOG_BASE_URL;
-  if (!baseUrl) throw new Error("生成 catalog 需要 CATALOG_BASE_URL，例如 https://cdn.example/adapters");
+  if (process.env.CATALOG_BASE_URL) {
+    console.warn("⚠ CATALOG_BASE_URL 已无作用：catalog 不再描述端点（ADR-018 §2.5.1），已忽略");
+  }
   const entries = [];
   for (const adapterId of readdirSync("adapters")) {
     const manifest = JSON.parse(readFileSync(join("adapters", adapterId, "manifest.json"), "utf8"));
@@ -28,7 +33,6 @@ if (process.argv.includes("--write")) {
       adapterId: manifest.adapterId,
       adapterVersion: manifest.adapterVersion,
       digest,
-      url: `${baseUrl.replace(/\/$/, "")}/${stem}.json.gz`,
       capabilities: manifest.capabilities.map((capability) => capability.id),
       ...(manifest.runtime?.stdlibMin ? { stdlibMin: manifest.runtime.stdlibMin } : {}),
     });
@@ -59,6 +63,11 @@ if (!valid) {
 }
 const registry = JSON.parse(readFileSync("vendor/contract/capability/registry.json", "utf8")).capabilities;
 for (const entry of JSON.parse(readFileSync(catalogPath, "utf8")).entries) {
+  if ("url" in entry) {
+    console.warn(
+      `⚠ K3_deprecated_url: ${entry.adapterId}@${entry.adapterVersion} 带已弃用的 url（catalog 只描述文件，ADR-018 §2.5.1）；请重跑 npm run catalog`,
+    );
+  }
   for (const capability of entry.capabilities) {
     if (!registry[capability]) throw new Error(`catalog: 未注册 capability '${capability}'`);
   }
