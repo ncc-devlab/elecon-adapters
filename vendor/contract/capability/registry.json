@@ -1,15 +1,27 @@
 {
   "description": "所有合法 capability id 的注册表。新增 id 或改其语义需走 ADR。",
   "capabilities": {
+    "query.prefetch": {"description": "学校提供完整只读补齐计划（ADR-109；1.0保留空教室范围）", "emits": {"schema": "elecon.query.prefetch", "schemaVersion": "2.0", "previousVersions": ["1.0"]}, "params": {"schema": "elecon.params.query.prefetch", "schemaVersion": "2.0", "previousVersions": ["1.0"]}},
+    "messages.enrich": {"description": "前台会话可选信息的稀疏补全（ADR-099/108）", "emits": {"schema": "elecon.messages.enrich", "schemaVersion": "1.1", "previousVersions": ["1.0"]}, "params": {"schema": "elecon.params.messages.enrich", "schemaVersion": "1.1", "previousVersions": ["1.0"]}},
+    "web.content": { "description": "显式打开同包网页交互（ADR-073；仅前台、不缓存、不重放）", "emits": { "schema": "elecon.web.content", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.web.content", "schemaVersion": "1.0" } },
+    "query.controls": { "description": "同包只读查询表单（ADR-083/082；1.0保留ADR-071语义）", "emits": { "schema": "elecon.query.controls", "schemaVersion": "2.1", "previousVersions": ["1.0", "2.0"] }, "params": { "schema": "elecon.params.query.controls", "schemaVersion": "2.1", "previousVersions": ["1.0", "2.0"] } },
+    "directory.phones": { "description": "学校公开电话黄页（ADR-084；只读目录，拨号由用户在宿主触发）", "emits": { "schema": "elecon.directory.phones", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.directory.phones", "schemaVersion": "1.0" } },
+    "faculty.reviews": {"description": "来源维护归属的统一教师评价（ADR-119）", "emits": {"schema": "elecon.faculty.reviews", "schemaVersion": "2.0", "previousVersions": ["1.0", "1.1"]}, "params": {"schema": "elecon.params.faculty.reviews", "schemaVersion": "2.0", "previousVersions": ["1.0"]}},
+    "faculty.review.submit": {"description": "用户显式投稿；不可缓存或自动重放（ADR-113）", "emits": {"schema": "elecon.faculty.review.submit", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.faculty.review.submit", "schemaVersion": "1.0"}},
+    "faculty.search": { "description": "检索学校公开教师资料（ADR-050）", "emits": { "schema": "elecon.faculty.search", "schemaVersion": "1.2", "previousVersions": ["1.0", "1.1"] }, "params": { "schema": "elecon.params.faculty.search", "schemaVersion": "1.0" } },
     "grades.list": {
       "description": "获取学期成绩列表",
       "emits": { "schema": "elecon.grades.list", "schemaVersion": "1.1" },
-      "params": { "schema": "elecon.params.grades.list", "schemaVersion": "1.0" }
+      "params": { "schema": "elecon.params.grades.list", "schemaVersion": "1.1", "previousVersions": ["1.0"] }
     },
     "schedule.week": {
       "description": "获取指定周课表",
-      "emits": { "schema": "elecon.schedule.week", "schemaVersion": "1.0" },
+      "emits": { "schema": "elecon.schedule.week", "schemaVersion": "1.4", "previousVersions": ["1.0", "1.1", "1.2", "1.3"] },
       "params": { "schema": "elecon.params.schedule.week", "schemaVersion": "1.0" }
+    },
+    "card.qr": {
+      "description": "获取短时校园卡二维码图片（ADR-047；禁止预加载与持久缓存）",
+      "emits": { "schema": "elecon.card.qr", "schemaVersion": "1.0" }
     },
     "card.balance": {
       "description": "获取一卡通余额",
@@ -20,6 +32,7 @@
       "emits": { "schema": "elecon.card.transactions", "schemaVersion": "1.0" },
       "params": { "schema": "elecon.params.card.transactions", "schemaVersion": "1.0" }
     },
+    "library.search": { "description": "检索书目（ADR-088）", "emits": { "schema": "elecon.library.search", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.library.search", "schemaVersion": "1.0" } },
     "library.loans": {
       "description": "获取当前借阅列表",
       "emits": { "schema": "elecon.library.loans", "schemaVersion": "1.0" }
@@ -38,12 +51,12 @@
     "term.list": { "description": "获取学年学期列表", "emits": { "schema": "elecon.term.list", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.term.list", "schemaVersion": "1.0" } },
     "calendar.academic": { "description": "获取校历", "emits": { "schema": "elecon.calendar.academic", "schemaVersion": "1.0" } },
     "exam.list": { "description": "获取考试安排", "emits": { "schema": "elecon.exam.list", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.exam.list", "schemaVersion": "1.0" } },
-    "classroom.available": { "description": "查询空教室", "emits": { "schema": "elecon.classroom.available", "schemaVersion": "1.1" }, "params": { "schema": "elecon.params.classroom.available", "schemaVersion": "1.1" } },
+    "classroom.available": { "description": "查询空教室", "emits": { "schema": "elecon.classroom.available", "schemaVersion": "1.3", "previousVersions": ["1.1", "1.2"] }, "params": { "schema": "elecon.params.classroom.available", "schemaVersion": "1.2", "previousVersions": ["1.1"] } },
     "classroom.buildings": { "description": "列出教学楼（空教室 discovery）", "emits": { "schema": "elecon.classroom.buildings", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.classroom.buildings", "schemaVersion": "1.0" } },
     "attendance.summary": { "description": "获取考勤汇总", "emits": { "schema": "elecon.attendance.summary", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.attendance.summary", "schemaVersion": "1.0" } },
     "library.seats": { "description": "查询图书馆座位", "emits": { "schema": "elecon.library.seats", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.library.seats", "schemaVersion": "1.0" } },
     "library.booking": { "description": "获取图书馆预约", "emits": { "schema": "elecon.library.booking", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.library.booking", "schemaVersion": "1.0" } },
-    "energy.usage": { "description": "获取水电用量", "emits": { "schema": "elecon.energy.usage", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.energy.usage", "schemaVersion": "1.0" } },
+    "energy.usage": {"description": "获取水电用量", "emits": {"schema": "elecon.energy.usage", "schemaVersion": "1.1", "previousVersions": ["1.0"]}, "params": {"schema": "elecon.params.energy.usage", "schemaVersion": "1.1"}},
     "course.catalog": { "description": "检索课程目录", "emits": { "schema": "elecon.course.catalog", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.course.catalog", "schemaVersion": "1.0" } },
     "course.selection": { "description": "获取选课状态", "emits": { "schema": "elecon.course.selection", "schemaVersion": "1.0" }, "params": { "schema": "elecon.params.course.selection", "schemaVersion": "1.0" } },
     "gpa.summary": { "description": "获取绩点汇总", "emits": { "schema": "elecon.gpa.summary", "schemaVersion": "1.1" }, "params": { "schema": "elecon.params.gpa.summary", "schemaVersion": "1.0" } }
@@ -57,5 +70,20 @@
     ,"research.income": { "description": "获取科研收入", "emits": { "schema": "elecon.research.income", "schemaVersion": "1.0" } }
     ,"campus.network": { "description": "获取校园网络状态", "emits": { "schema": "elecon.campus.network", "schemaVersion": "1.0" } }
     ,"app.announcement": { "description": "获取应用公告", "emits": { "schema": "elecon.app.announcement", "schemaVersion": "1.0" } }
+    ,"energy.meters": {"description": "energy.meters（ADR-040）", "emits": {"schema": "elecon.energy.meters", "schemaVersion": "1.0"}}
+    ,"climate.devices": {"description": "climate.devices（ADR-040）", "emits": {"schema": "elecon.climate.devices", "schemaVersion": "1.1", "previousVersions": ["1.0"]}}
+    ,"climate.status": {"description": "climate.status（ADR-040）", "emits": {"schema": "elecon.climate.status", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.climate.status", "schemaVersion": "1.0"}}
+    ,"climate.command": {"description": "climate.command（ADR-040）", "emits": {"schema": "elecon.climate.command", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.climate.command", "schemaVersion": "1.0"}}
+
+    ,"forum.session": {"description": "forum.session（ADR-052；仅前台、不缓存）", "emits": {"schema": "elecon.forum.session", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.forum.session", "schemaVersion": "1.0"}}
+    ,"messages.session": {"description": "messages.session（ADR-052；仅前台、不缓存）", "emits": {"schema": "elecon.messages.session", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.messages.session", "schemaVersion": "1.0"}}
+    ,"messages.list": {"description": "messages.list（ADR-052；仅前台、不缓存）", "emits": {"schema": "elecon.messages.list", "schemaVersion": "1.1", "previousVersions": ["1.0"]}, "params": {"schema": "elecon.params.messages.list", "schemaVersion": "1.0"}}
+    ,"attendance.checkin": {"description": "attendance.checkin（ADR-055；仅前台、不缓存）", "emits": {"schema": "elecon.attendance.checkin", "schemaVersion": "1.1", "previousVersions": ["1.0"]}, "params": {"schema": "elecon.params.attendance.checkin", "schemaVersion": "1.1", "previousVersions": ["1.0"]}}
+    ,"messages.conversations": {"description": "messages.conversations（ADR-098；前台消息、群名称与内联头像）", "emits": {"schema": "elecon.messages.conversations", "schemaVersion": "1.3", "previousVersions": ["1.0", "1.1", "1.2"]}, "params": {"schema": "elecon.params.messages.conversations", "schemaVersion": "1.0"}}
+    ,"messages.history": {"description": "messages.history（ADR-061；前台消息）", "emits": {"schema": "elecon.messages.history", "schemaVersion": "1.2", "previousVersions": ["1.0", "1.1"]}, "params": {"schema": "elecon.params.messages.history", "schemaVersion": "1.0"}}
+    ,"messages.open": {"description": "显式浏览同来源消息网页（ADR-123）", "emits": {"schema": "elecon.messages.open", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.messages.open", "schemaVersion": "1.0"}}
+    ,"messages.image": {"description": "读取同来源消息图片（ADR-124）", "emits": {"schema": "elecon.messages.image", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.messages.image", "schemaVersion": "1.0"}}
+    ,"messages.send": {"description": "messages.send（ADR-061；前台消息）", "emits": {"schema": "elecon.messages.send", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.messages.send", "schemaVersion": "1.0"}}
+    ,"account.session": {"description": "脚本声明账号状态及显式登录（ADR-066）；状态检查无交互，禁止预加载与缓存。", "emits": {"schema": "elecon.account.session", "schemaVersion": "1.0"}, "params": {"schema": "elecon.params.account.session", "schemaVersion": "1.0"}}
     }
   }

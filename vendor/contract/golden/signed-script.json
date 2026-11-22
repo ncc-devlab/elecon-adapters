@@ -1,0 +1,16 @@
+{
+  "note": "ADR-127 synthetic Ed25519 test vector; not a production key",
+  "package": {
+    "format": "elecon-script/3",
+    "payload": "eyJtYW5pZmVzdCI6eyJhY2NvdW50cyI6W10sImJyb3dzZXIiOmZhbHNlLCJjYXBhYmlsaXRpZXMiOlt7ImlkIjoibm90aWNlLmxpc3QiLCJzY2hlbWEiOiJlbGVjb24ubm90aWNlLmxpc3QiLCJzY2hlbWFWZXJzaW9uIjoiMS4xIn1dLCJpZCI6InN5bnRoZXRpYy5zaWduZWQiLCJuYW1lIjoi5ZCI5oiQ5a2m5qChIPCfjLEiLCJuZXR3b3JrIjp7Im9yaWdpbnMiOltdfSwic2Nob29sSWQiOiJzeW50aGV0aWMiLCJzZGtWZXJzaW9uIjoyNSwidmVyc2lvbiI6IjEuMC4wIn0sInB1YmxpY0tleSI6eyJhbGdvcml0aG0iOiJlZDI1NTE5IiwidmFsdWUiOiJMSnVhUXRWNjMvMVE1dXNkcFVQZWs2MlgwMjJYYlNvcmx6WG5GQzgvdUZrPSJ9LCJzb3VyY2UiOiJleHBvcnQgY29uc3QgY2FwYWJpbGl0aWVzID0ge307IC8vIOWQiOaIkFxuIn0K",
+    "signature": "fr/sbXVXJIIXzE56j2lOM9TepB39bFKFi2ywTm/HVISP6SwC7jTGoDsm5Ttvc1QDqxNjOxnwRKn+YSQdNf+BBw=="
+  },
+  "packageId": "synthetic.signed",
+  "version": "1.0.0",
+  "publicKey": {
+    "algorithm": "ed25519",
+    "value": "LJuaQtV63/1Q5usdpUPek62X022XbSorlzXnFC8/uFk="
+  },
+  "digest": "e177d4b143d2e3aad87ac589e6fdcf0ae02bdcfd7c248d7aaf1a9ecaa95b6bc2",
+  "fingerprint": "aab061da791286a3b2bcf30191d072b1e04d4f8eb5540f00a4bd37ca16efefc8"
+}

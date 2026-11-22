@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.faculty.reviews",
+  "title": "教师评价查询参数",
+  "type": "object",
+  "required": [
+    "teacherId",
+    "teacherName"
+  ],
+  "properties": {
+    "teacherId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "同来源教师ID。"
+    },
+    "teacherName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "搜索结果教师名称，仅用于独立历史分组检索。"
+    },
+    "groupId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "用户选择的历史分组ID；缺失表示当前教师评价。"
+    },
+    "cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "同一查询上一页返回的游标。"
+    }
+  },
+  "additionalProperties": false
+}

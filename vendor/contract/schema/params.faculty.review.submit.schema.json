@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.faculty.review.submit",
+  "title": "教师评价投稿参数",
+  "type": "object",
+  "required": [
+    "teacherId",
+    "subject",
+    "content",
+    "isGood",
+    "requestId"
+  ],
+  "properties": {
+    "teacherId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "同来源教师ID。"
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "课程名称，去除首尾空白。"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 2000,
+      "description": "用户主动输入的评价纯文本。"
+    },
+    "isGood": {
+      "type": "boolean",
+      "description": "用户明确选择是否推荐。"
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "description": "本次显式投稿的幂等标识；同内容重试必须沿用。",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    }
+  },
+  "additionalProperties": false
+}

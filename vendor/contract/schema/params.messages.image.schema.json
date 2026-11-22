@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.messages.image",
+  "title": "读取当前会话的图片消息",
+  "description": "仅用户点击时读取归档中当前账号和会话的一条图片消息。",
+  "type": "object",
+  "properties": {
+    "accountId": {
+      "type": "string",
+      "description": "本次核验的远端服务账号 ID；须与请求账号一致。",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "conversationId": {
+      "type": "string",
+      "description": "源站会话 ID；由 serviceId/accountId/conversationKind 共同限定。",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "conversationKind": {
+      "type": "string",
+      "description": "group 群聊，direct 私聊；相同 ID 的不同类型不合并。",
+      "enum": [
+        "group",
+        "direct"
+      ]
+    },
+    "messageId": {
+      "type": "string",
+      "description": "源站稳定消息 ID；十进制大整数保留字符串。",
+      "minLength": 1,
+      "maxLength": 128
+    }
+  },
+  "required": [
+    "accountId",
+    "conversationId",
+    "conversationKind",
+    "messageId"
+  ],
+  "additionalProperties": false
+}

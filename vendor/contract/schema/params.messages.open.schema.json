@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.messages.open",
+  "title": "浏览指令消息网页",
+  "description": "由用户点击当前消息触发，绑定来源、账号、会话和消息。",
+  "type": "object",
+  "properties": {
+    "accountId": {
+      "type": "string",
+      "description": "本次核验的远端服务账号 ID；须与请求账号一致。",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "conversationId": {
+      "type": "string",
+      "description": "源站会话 ID；由 serviceId/accountId/conversationKind 共同限定。",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "conversationKind": {
+      "type": "string",
+      "description": "group 群聊，direct 私聊；相同 ID 的不同类型不合并。",
+      "enum": [
+        "group",
+        "direct"
+      ]
+    },
+    "messageId": {
+      "type": "string",
+      "description": "源站稳定消息 ID；十进制大整数保留字符串。",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "webRef": {
+      "type": "string",
+      "description": "来源生成的网页引用，限 command。用户点击时原样交回同来源 messages.open；禁止包含凭据。省略表示仅展示。",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._~:-]+$"
+    }
+  },
+  "required": [
+    "accountId",
+    "conversationId",
+    "conversationKind",
+    "messageId",
+    "webRef"
+  ],
+  "additionalProperties": false
+}

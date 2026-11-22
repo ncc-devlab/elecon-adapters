@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.faculty.reviews",
+  "title": "教师评价",
+  "type": "object",
+  "required": [
+    "teacherId",
+    "items",
+    "sourceLabel",
+    "sourceUrl"
+  ],
+  "properties": {
+    "teacherId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "与请求相同的教师ID，属于搜索来源。"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "subject",
+          "content",
+          "isGood",
+          "createdAt",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "来源内稳定评价ID。"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "来源课程名；未注明时由来源明确标注。"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "description": "评价纯文本，不作为HTML执行。"
+          },
+          "isGood": {
+            "type": "boolean",
+            "description": "来源明确给出的推荐判断。"
+          },
+          "createdAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "评价发布时间，RFC3339；不是抓取时间。",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "评价来源名称。"
+          }
+        }
+      },
+      "description": "当前页评价；空表示本次查询无记录。"
+    },
+    "sourceLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "评价服务的展示名称。"
+    },
+    "sourceUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "评价服务HTTPS来源。",
+      "pattern": "^https://",
+      "format": "uri"
+    },
+    "nextCursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "下一页不透明游标；缺失表示无后续。"
+    },
+    "statistics": {
+      "type": "object",
+      "required": [
+        "total",
+        "good",
+        "bad"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "当前范围全部公开评价数量，单位条，等于good与bad之和。"
+        },
+        "good": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "当前范围全部公开好评数量，单位条。"
+        },
+        "bad": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "当前范围全部公开差评数量，单位条。"
+        }
+      },
+      "description": "本教师在来源指定查询范围内全部公开评价统计，不受分页影响；缺失表示未提供，不等于零。"
+    }
+  }
+}

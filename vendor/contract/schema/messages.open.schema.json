@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.messages.open",
+  "title": "指令消息浏览结束",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "closed",
+        "timedOut",
+        "completed"
+      ],
+      "description": "网页关闭、交互超时或页面返回；仅描述浏览生命周期。"
+    }
+  },
+  "required": [
+    "status"
+  ]
+}

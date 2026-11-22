@@ -17,6 +17,8 @@ class ClassroomAvailable {
     this.sourceSystem,
     this.updatedAt,
     this.items,
+    this.appliedFilters,
+    this.coverage,
   });
 
   /// 实际采用的查询日历日，格式为 YYYY-MM-DD；未使用日历日轴时省略。
@@ -43,6 +45,10 @@ class ClassroomAvailable {
   final String? updatedAt;
   /// 符合查询条件的教室列表；无匹配教室时可为空数组。
   final List<ClassroomAvailableItems>? items;
+  /// 学校脚本实际采用的字段值；缺失表示来源不提供回显，不可猜测为请求原值。
+  final Map<String, Object>? appliedFilters;
+  /// 实际查询条件范围的完整性证据；缺失表示完整性未知，不是完整或空结果。
+  final ClassroomAvailableCoverage? coverage;
 }
 
 class ClassroomAvailableItems {
@@ -58,6 +64,10 @@ class ClassroomAvailableItems {
     this.occupied,
     this.status,
     this.sections,
+    this.intervals,
+    this.roomType,
+    this.teachingCapacity,
+    this.examCapacity,
   });
 
   /// 教室所属校区；缺失表示来源未提供。
@@ -82,6 +92,26 @@ class ClassroomAvailableItems {
   final String? status;
   /// 分节占用；缺失=该校不提供节次粒度；至多 24 节
   final List<ClassroomAvailableItemsSections>? sections;
+  /// 已知绝对时段，左闭右开；同教室不得重叠，结束晚于开始；缺口为未知，不从节间或无课程推断开放。省略表示仅有旧聚合/节次数据。
+  final List<ClassroomAvailableItemsIntervals>? intervals;
+  /// 学校教室类型；缺失表示未知，不生成通用默认类型。
+  final ClassroomAvailableItemsRoomType? roomType;
+  /// 教学布置的座位容量，单位人；缺失表示未知，不能以0代替或继承考试容量。
+  final int? teachingCapacity;
+  /// 考试布置的座位容量，单位人；缺失表示未知，不能以0代替或继承教学容量。
+  final int? examCapacity;
+}
+
+class ClassroomAvailableCoverage {
+  const ClassroomAvailableCoverage({
+    required this.complete,
+    this.description,
+  });
+
+  /// 是否已完整覆盖实际采用条件的查询范围；true不等于查询全校，false表示仅部分结果。
+  final bool complete;
+  /// 可选纯文本范围和不完整原因说明；不用于推断未返回教室的状态。
+  final String? description;
 }
 
 class ClassroomAvailableItemsSections {
@@ -103,4 +133,34 @@ class ClassroomAvailableItemsSections {
   final String? timeStart;
   /// 该节墙钟终点，推荐 HH:mm
   final String? timeEnd;
+}
+
+class ClassroomAvailableItemsIntervals {
+  const ClassroomAvailableItemsIntervals({
+    required this.startAt,
+    required this.endAt,
+    required this.status,
+    this.reason,
+  });
+
+  /// 区间起点（含），RFC3339/UTC；必须是查询日对应的真实时刻。
+  final String startAt;
+  /// 区间终点（不含），RFC3339/UTC；必须晚于 startAt。
+  final String endAt;
+  /// 本区间无占用记录、占用或无法确认；available 不保证实际开门或允许使用。
+  final String status;
+  /// 学校脚本提供的状态依据或原因，纯文本；缺失表示来源未提供，宿主不得猜测。
+  final String? reason;
+}
+
+class ClassroomAvailableItemsRoomType {
+  const ClassroomAvailableItemsRoomType({
+    required this.label,
+    this.code,
+  });
+
+  /// 学校提供的教室类型名称，不据名称推断设备或用途权限。
+  final String label;
+  /// 学校作用域的类型代码；缺失表示来源未提供，不能以label替代。
+  final String? code;
 }

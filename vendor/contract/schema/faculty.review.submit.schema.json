@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.faculty.review.submit",
+  "title": "教师评价投稿结果",
+  "type": "object",
+  "required": [
+    "teacherId",
+    "requestId",
+    "status"
+  ],
+  "properties": {
+    "teacherId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "与请求相同的教师ID。"
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "description": "本次显式投稿的幂等标识；同内容重试必须沿用。",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20,
+      "description": "服务确认的投稿状态；unknown表示请求可能已生效，不自动重发。",
+      "enum": [
+        "pending",
+        "published",
+        "rejected",
+        "hidden",
+        "deleted",
+        "unknown"
+      ]
+    },
+    "reviewId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "服务确认的评价ID；未知结果时缺失。"
+    }
+  }
+}

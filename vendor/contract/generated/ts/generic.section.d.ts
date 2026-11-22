@@ -25,7 +25,7 @@ export interface GenericSectionTable {
   /** 表格列定义，顺序与每行的数据值一致。 */
   columns: GenericSectionTableColumns[];
   /** 表格数据行；每行各值按 columns 的顺序排列。 */
-  rows: string | number | boolean | unknown | GenericSectionTableRows[][];
+  rows: ((string | number | boolean | unknown | GenericSectionTableRows)[])[];
 }
 
 export interface GenericSectionFieldsValue {

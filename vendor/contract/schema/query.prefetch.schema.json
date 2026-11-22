@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.query.prefetch",
+  "title": "前台只读补齐计划",
+  "description": "ADR-109：SDK21学校拥有的完整参数计划；最多16 KiB UTF-8，合法空计划表示无后续工作。",
+  "type": "object",
+  "required": [
+    "target",
+    "planId",
+    "queries"
+  ],
+  "properties": {
+    "target": {
+      "type": "string",
+      "description": "用户已启用的同包学期只读能力；本版本不扩展空教室1.0的三日授权。",
+      "enum": [
+        "schedule.week",
+        "grades.list",
+        "exam.list"
+      ]
+    },
+    "planId": {
+      "type": "string",
+      "description": "学校给出的稳定业务范围标识；宿主另绑定来源、身份及完整计划摘要。",
+      "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+    },
+    "queries": {
+      "type": "array",
+      "description": "至多maxQueries项；id和规范化完整参数不得重复；禁止configure命令。",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "description": "一个可独立提交的完整查询分片。",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "params",
+          "identity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "计划内稳定分片标识，用于恢复进度，不充当全局实体ID。",
+            "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+          },
+          "params": {
+            "type": "object",
+            "description": "目标能力的完整JSON参数；由学校解释自定义filters语义，宿主不补写字段。",
+            "additionalProperties": {},
+            "maxProperties": 32
+          },
+          "identity": {
+            "type": "object",
+            "description": "学校声明的预期标准结果身份；提交前核对。schedule.week必须含week，其他目标不得含week。",
+            "additionalProperties": false,
+            "required": [
+              "term"
+            ],
+            "properties": {
+              "term": {
+                "type": "string",
+                "description": "预期标准结果的学期ID，须与结果term完全相等。",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "week": {
+                "type": "integer",
+                "description": "仅课表目标必填，预期标准结果的教学周号。",
+                "minimum": 1,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    },
+    "nextCursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "尚有后续候选时返回的学校游标；省略仅表示当前学校计划没有后续，不证明源站学期完整。"
+    }
+  }
+}

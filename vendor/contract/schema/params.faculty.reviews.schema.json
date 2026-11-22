@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.faculty.reviews",
+  "title": "教师评价查询参数",
+  "type": "object",
+  "required": [
+    "teacherId",
+    "teacherName"
+  ],
+  "properties": {
+    "teacherId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "同来源教师ID。"
+    },
+    "teacherName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "同来源搜索结果教师显示名，供学校脚本查询；宿主不按姓名判断实体归属。"
+    },
+    "cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "同一查询上一页返回的游标。"
+    }
+  },
+  "additionalProperties": false
+}

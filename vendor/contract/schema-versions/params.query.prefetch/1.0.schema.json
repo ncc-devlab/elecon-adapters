@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.params.query.prefetch",
+  "title": "脚本预取计划参数",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target", "seed", "todayDate", "days"],
+  "properties": {
+    "target": {
+      "type": "string",
+      "enum": ["classroom.available"],
+      "description": "已启用预取的同包只读能力；本版本仅支持空教室。"
+    },
+    "seed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["params", "date", "timeZone"],
+      "description": "同来源最近正常显示查询；不传整份结果或其他来源数据，脚本须验证其业务范围。",
+      "properties": {
+        "params": {
+          "type": "object",
+          "additionalProperties": {},
+          "maxProperties": 32,
+          "description": "种子查询的完整JSON参数；核心不解释学校自定义字段。"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "种子结果明确返回的学校当地日历日，YYYY-MM-DD。"
+        },
+        "timeZone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "种子结果明确声明的IANA学校时区；宿主不使用设备时区推断。"
+        }
+      }
+    },
+    "todayDate": {
+      "type": "string",
+      "format": "date",
+      "description": "宿主按seed.timeZone计算的学校今日，YYYY-MM-DD；种子必须在今日至未来三日内。"
+    },
+    "days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "用户明确启用的种子后续日数；候选最多此数量，且仍受学校今日加三日上限约束。"
+    }
+  }
+}

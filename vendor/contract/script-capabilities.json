@@ -1,0 +1,434 @@
+{
+  "account.session": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "app.announcement": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "attendance.checkin": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "attendance.summary": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "calendar.academic": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "campus.network": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "card.balance": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "card.qr": {
+    "foreground": false,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "card.transactions": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "classroom.available": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "classroom.buildings": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "climate.command": {
+    "foreground": false,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "climate.devices": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "climate.status": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "course.catalog": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "course.selection": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "dining.summary": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "directory.phones": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "dorm.health": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "dorm.service": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "energy.meters": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "energy.usage": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "exam.list": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": true,
+    "retentionDays": 180
+  },
+  "faculty.review.submit": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "faculty.reviews": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "faculty.search": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "forum.session": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "generic.section": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "gpa.summary": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "grades.list": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": true,
+    "retentionDays": 180
+  },
+  "invoice.list": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "library.booking": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "library.loans": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "library.search": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "library.seats": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.conversations": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.enrich": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.history": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.list": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.open": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.send": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.session": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "notice.detail": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "notice.list": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "profile.me": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "program.progress": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "query.controls": {
+    "foreground": false,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "query.prefetch": {
+    "foreground": false,
+    "cacheable": false,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "research.income": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "schedule.week": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": true,
+    "retentionDays": 180
+  },
+  "term.list": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "transport.schedule": {
+    "foreground": false,
+    "cacheable": true,
+    "exclusive": false,
+    "shareable": true,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "web.content": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  },
+  "messages.image": {
+    "foreground": true,
+    "cacheable": false,
+    "exclusive": true,
+    "shareable": false,
+    "jobTarget": false,
+    "retentionDays": 7
+  }
+}

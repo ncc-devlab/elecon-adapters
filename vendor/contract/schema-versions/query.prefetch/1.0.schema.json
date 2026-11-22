@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.query.prefetch",
+  "title": "脚本只读预取计划",
+  "description": "ADR-107：学校脚本返回完整候选参数；核心不解释自定义字段，不据此扩大查询授权。计划最多16 KiB UTF-8。",
+  "type": "object",
+  "required": ["target", "queries"],
+  "properties": {
+    "target": {
+      "type": "string",
+      "enum": ["classroom.available"],
+      "description": "同包已有且允许缓存的只读能力，须与请求目标一致；本版本仅支持空教室。"
+    },
+    "queries": {
+      "type": "array",
+      "maxItems": 3,
+      "description": "至多三项可直接执行的完整查询；学校不能证明保留用户明确楼栋及其他条件时返回空数组。日期与完整参数均不得重复。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "params"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "候选查询对应的学校当地日历日，YYYY-MM-DD；晚于种子，不超过种子加days或学校今日加三日。"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "maxProperties": 32,
+            "description": "目标能力的完整JSON参数；由学校验证并保留明确楼栋和可复用条件，宿主不合并、删除或推断字段。"
+          }
+        }
+      }
+    }
+  }
+}

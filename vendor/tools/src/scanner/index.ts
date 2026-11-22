@@ -2,7 +2,7 @@
  * scanner：夹具 PII 扫描（脱敏检查，CI 闸门）。
  *
  * 红线 #8：不提交真实学生数据。本工具在提交/CI 时扫描 `adapters/**\/fixtures/`
- * 与 `adapters_tests/**` 下的文本，拦截疑似**未脱敏**的真实身份信息：
+ * 与学校脚本、研究材料和客户端夹具中的文本，拦截疑似**未脱敏**的真实身份信息：
  *  P1 中国大陆居民身份证号（18 位，末位校验）
  *  P2 中国大陆手机号（1[3-9] + 9 位）
  *  P3 学号（连续 8–12 位数字，且上下文含 学号/studentId/xh 等提示词）
@@ -24,6 +24,7 @@
  * ⚠ 本工具是**启发式**闸门，不能替代人工审阅（红线 #8 最终由人负责）。
  */
 
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -222,9 +223,9 @@ export function scanLine(line: string): PiiFinding[] {
 
 // ---- 文件系统扫描 ----
 
-const SCAN_ROOTS = ["adapters", "adapters_tests"];
+const SCAN_ROOTS = ["adapters", "experiments/school-protocols", "school-scripts", "client/test/fixtures"];
 const TEXT_EXT = /\.(json|html?|txt|md|mjs|js|ts|csv|xml|py)$/i;
-const SKIP_DIR = /(^|\/)(node_modules|\.venv|\.git|build|dist|\.dart_tool)(\/|$)/;
+const SKIP_DIR = /(^|\/)(graphify-out|node_modules|\.venv|\.git|build|dist|\.dart_tool)(\/|$)/;
 
 function walkFiles(dir: string, out: string[]): void {
   if (SKIP_DIR.test(dir)) return;
@@ -238,6 +239,13 @@ function walkFiles(dir: string, out: string[]): void {
     }
   }
 }
+
+// Only the private core tree carries reviews of its own school sources.
+// A change to any byte of the trimmed line requires a fresh review.
+const reviewFile = join(repoRoot, "school-scripts/scanner-reviews.json");
+const reviewedLines: Record<string, Record<string, string>> = existsSync(reviewFile)
+  ? JSON.parse(readFileSync(reviewFile, "utf8"))
+  : {};
 
 export function scanFile(path: string): FileFinding[] {
   const findings: FileFinding[] = [];
@@ -255,6 +263,13 @@ export function scanFile(path: string): FileFinding[] {
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i++) {
     for (const f of scanLine(lines[i] ?? "")) {
+      const reviews = reviewedLines[relative(repoRoot, path)];
+      if (reviews && f.code === "P5_session_credential") {
+        const fingerprint = createHash("sha256")
+          .update((lines[i] ?? "").trim())
+          .digest("hex");
+        if (Object.hasOwn(reviews, fingerprint)) continue;
+      }
       findings.push({ ...f, file: path, line: i + 1 });
     }
   }

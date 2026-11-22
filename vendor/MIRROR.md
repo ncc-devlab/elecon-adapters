@@ -5,13 +5,12 @@
 
 | 项 | 来源 | 用途 |
 |---|---|---|
-| `contract/` | core `contract/` | manifest / capability / schema 契约（validator 据此校验） |
-| `adapters/_stdlib/` | core `adapters/_stdlib/` | `elecon:html` stdlib（bundle + 版本，供 stdlibMin 校验）;版本 = 1.0.0 |
+| `contract/` | core `contract/` | source-package / capability / schema 契约（供打包与签名工具校验） |
+| `adapters/_stdlib/` | core `adapters/_stdlib/` | `elecon:html` stdlib（宿主 HTML 解析器），版本 = 1.0.0 |
 | `adapters/_template/` | core `adapters/_template/` | 贡献脚手架 |
-| `tools/src/{validator,scanner,adapter-policy}/` | core `tools/src/` | CI 静态闸门（§2.10）;**不含 signer** |
-| `packages/broker-primitives/` | core `packages/broker-primitives/dist` | validator 依赖的 url-match 原语 |
+| `tools/src/{script,scanner,codegen,schema}/` | core `tools/src/` | 源码打包/签名、数据扫描和契约生成；不含私钥 |
 
-- 源版本（core）：`d8370926f235e8130e8a4123b0c8ed8d94951c4f-dirty`
+- 源版本（core）：`4c6315e61e91a97c89655ec65c87bf0199d29a02`
 - stdlib 版本：1.0.0
 
 > 若核心 tool 依赖（ajv / ajv-formats / tsx）版本变化，需同步更新公开仓根 `package.json`。

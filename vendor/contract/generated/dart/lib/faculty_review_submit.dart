@@ -1,0 +1,22 @@
+// DO NOT EDIT —— 由 tools/src/codegen 从 contract/schema/ 生成。
+// 改动请改 schema 并重跑 `npm run codegen`（红线 #6：契约即承重墙）。
+
+library;
+
+class FacultyReviewSubmit {
+  const FacultyReviewSubmit({
+    required this.teacherId,
+    required this.requestId,
+    required this.status,
+    this.reviewId,
+  });
+
+  /// 与请求相同的教师ID。
+  final String teacherId;
+  /// 本次显式投稿的幂等标识；同内容重试必须沿用。
+  final String requestId;
+  /// 服务确认的投稿状态；unknown表示请求可能已生效，不自动重发。
+  final String status;
+  /// 服务确认的评价ID；未知结果时缺失。
+  final String? reviewId;
+}

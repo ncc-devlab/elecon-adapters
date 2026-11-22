@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.signed-script-package",
+  "title": "Signed source envelope (ADR-127)",
+  "description": "At most 1500 KiB UTF-8; verify original decoded payload before use.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "format": {
+      "const": "elecon-script/3",
+      "description": "Signed format; independent of SDK version."
+    },
+    "payload": {
+      "type": "string",
+      "maxLength": 1398104,
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "Canonical Base64 of signed-script-payload JSON bytes, at most 1 MiB decoded."
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{86}==$",
+      "description": "Canonical Base64 of 64-byte Ed25519 signature over domain, NUL, raw SHA-256 of the payload."
+    }
+  }
+}

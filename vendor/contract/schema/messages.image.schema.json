@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elecon.messages.image",
+  "title": "消息图片",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "mimeType": {
+      "type": "string",
+      "enum": [
+        "image/jpeg",
+        "image/png"
+      ],
+      "description": "原图编码格式，必须与字节匹配。"
+    },
+    "base64": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 1398104,
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "原图文件的标准 base64，解码后最多 1 MiB。"
+    }
+  },
+  "required": [
+    "mimeType",
+    "base64"
+  ]
+}

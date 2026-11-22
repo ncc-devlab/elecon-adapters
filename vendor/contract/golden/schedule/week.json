@@ -1,0 +1,443 @@
+{
+  "description": "ADR-048 synthetic versioned schedule output cases shared by Dart and TypeScript.",
+  "cases": [
+    {
+      "name": "old-minimal",
+      "version": "1.0",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": []
+      }
+    },
+    {
+      "name": "new-minimal",
+      "version": "1.1",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": []
+      }
+    },
+    {
+      "name": "new-segments-and-preview",
+      "version": "1.1",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "timeSegments": [
+          {
+            "label": "A",
+            "timeStart": "08:00",
+            "timeEnd": "09:00"
+          }
+        ],
+        "weekPreviews": [
+          {
+            "week": 1,
+            "days": [
+              {
+                "dayOfWeek": 1,
+                "courseCount": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-invalid-clock",
+      "version": "1.1",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "timeSegments": [
+          {
+            "label": "A",
+            "timeStart": "25:00",
+            "timeEnd": "26:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-negative-count",
+      "version": "1.1",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "weekPreviews": [
+          {
+            "week": 1,
+            "days": [
+              {
+                "dayOfWeek": 1,
+                "courseCount": -1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "old-unrecognized-extension-remains-open",
+      "version": "1.0",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "timeSegments": [
+          {
+            "label": "A",
+            "timeStart": "25:00",
+            "timeEnd": "26:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "term-empty-week",
+      "version": "1.2",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "termWeeks": [
+          {
+            "week": 2,
+            "teachingWeekStart": "2026-11-09",
+            "teachingWeekEnd": "2026-11-15",
+            "days": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "term-invalid-week",
+      "version": "1.2",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "termWeeks": [
+          {
+            "week": 0,
+            "teachingWeekStart": "2026-11-09",
+            "teachingWeekEnd": "2026-11-15",
+            "days": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "term-missing-date",
+      "version": "1.2",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "termWeeks": [
+          {
+            "week": 2,
+            "days": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "term-invalid-days",
+      "version": "1.2",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "termWeeks": [
+          {
+            "week": 2,
+            "teachingWeekStart": "2026-11-09",
+            "teachingWeekEnd": "2026-11-15",
+            "days": [
+              {
+                "dayOfWeek": 8,
+                "slots": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "rest-segments-1.3",
+      "version": "1.3",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "timeZone": "Asia/Shanghai",
+        "breakSegments": [
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rest-optional-1.3",
+      "version": "1.3",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": []
+      }
+    },
+    {
+      "name": "invalid-rest-clock-1.3",
+      "version": "1.3",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "breakSegments": [
+          {
+            "label": "Lunch break",
+            "timeStart": "25:00",
+            "timeEnd": "14:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "missing-rest-label-1.3",
+      "version": "1.3",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "breakSegments": [
+          {
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "too-many-rest-segments-1.3",
+      "version": "1.3",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "breakSegments": [
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          },
+          {
+            "label": "Lunch break",
+            "timeStart": "12:00",
+            "timeEnd": "14:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid-school-zone-1.3",
+      "version": "1.3",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "timeZone": "not a zone"
+      }
+    },
+    {
+      "name": "1.2-exact-open-extension",
+      "version": "1.2",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 1,
+        "days": [],
+        "breakSegments": "unrecognized extension",
+        "timeZone": false
+      }
+    },
+    {
+      "name": "sparse queryable weeks",
+      "version": "1.4",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": [
+          2,
+          8,
+          10
+        ]
+      }
+    },
+    {
+      "name": "no automatic candidates",
+      "version": "1.4",
+      "valid": true,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": []
+      }
+    },
+    {
+      "name": "duplicate candidate",
+      "version": "1.4",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": [
+          8,
+          8
+        ]
+      }
+    },
+    {
+      "name": "invalid candidate zero",
+      "version": "1.4",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "invalid candidate upper bound",
+      "version": "1.4",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": [
+          101
+        ]
+      }
+    },
+    {
+      "name": "invalid candidate type",
+      "version": "1.4",
+      "valid": false,
+      "data": {
+        "term": "synthetic",
+        "week": 8,
+        "days": [],
+        "queryableWeeks": [
+          "9"
+        ]
+      }
+    }
+  ]
+}
