@@ -1,8 +1,8 @@
 {
-  "sdkVersion": 16,
+  "sdkVersion": 28,
   "id": "example.tunnel-account",
   "schoolId": "example",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Declared tunnel template",
   "browser": false,
   "network": {

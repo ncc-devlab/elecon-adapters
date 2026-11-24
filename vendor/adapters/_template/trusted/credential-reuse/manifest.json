@@ -1,8 +1,8 @@
 {
-  "sdkVersion": 15,
+  "sdkVersion": 28,
   "id": "example.credential-reuse",
   "schoolId": "example",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Credential reuse template",
   "browser": false,
   "network": {

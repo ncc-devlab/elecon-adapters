@@ -1,8 +1,8 @@
 {
-  "sdkVersion": 14,
+  "sdkVersion": 28,
   "accounts": [],
   "id": "template.web-form",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "schoolId": "template",
   "name": "Synthetic package form",
   "browser": true,

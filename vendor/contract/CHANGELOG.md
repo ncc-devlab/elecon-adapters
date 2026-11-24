@@ -1,5 +1,13 @@
 # `contract/` 变更流水
 
+## SDK29 · 脚本设置与签到网页
+
+/4 签名包支持 SDK28、SDK29。SDK29 可声明 `settings.fields` 并向现有 storage 数据集立即保存或删除一条记录。签到 2.0 以可选 `pageInput` 传递同包页面草稿，1.0 与 1.1 按原版本校验。可选 `checkinPage` 绑定已签名 HTML，Android 前台桥提供有修订检查的普通存储、同包只读查询、主动签到、扫码和现场拍照。见 [ADR-133](../docs/adr/adr_133_script_user_settings.md)。
+
+## 2026-11-23 · ADR-130
+
+源码包使用 `elecon-script/4`，签署文件表、入口和业务声明的原始 UTF-8 清单。SDK28 可用 `elecon.assets.stat/readBytes` 读取包内资产。旧 /3 包需要原发布者重新签发。
+
 ## SDK27 · 校园服务可达性
 
 能力与普通账号可在 `appTunnelAccountId` 旁声明 `directProbeOrigin`。目标须为已批准 HTTPS origin，旧版宿主拒绝 SDK27。详见 [ADR-128](../docs/adr/adr_128_reachable_campus_services.md)。

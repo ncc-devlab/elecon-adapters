@@ -13,7 +13,7 @@
 在仓库根目录打包：
 
 ```sh
-npm -w tools run scripts:package -- --manifest adapters/_template/trusted/attendance/manifest.json --source adapters/_template/trusted/attendance/index.js --out /tmp/attendance-template.elecon.json
+npm -w tools run scripts:package -- --manifest adapters/_template/trusted/attendance/manifest.json --source adapters/_template/trusted/attendance/index.js --out /tmp/attendance-template.eleconpkg
 node --test adapters/_template/trusted/attendance/template.test.mjs
 ```
 

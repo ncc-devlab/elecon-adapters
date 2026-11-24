@@ -1,0 +1,19 @@
+{
+  "sdkVersion": 28,
+  "id": "school-example",
+  "version": "0.3.1",
+  "schoolId": "example",
+  "name": "Example School",
+  "network": {
+    "origins": []
+  },
+  "browser": false,
+  "accounts": [],
+  "capabilities": [
+    {
+      "id": "notice.list",
+      "schema": "elecon.notice.list",
+      "schemaVersion": "1.1"
+    }
+  ]
+}

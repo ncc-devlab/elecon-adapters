@@ -1,7 +1,7 @@
 {
-  "sdkVersion": 11,
+  "sdkVersion": 28,
   "id": "school-attendance-example",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "schoolId": "example",
   "name": "通用签到模板（未配置）",
   "network": {

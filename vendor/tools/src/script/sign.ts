@@ -1,4 +1,4 @@
-/** ADR-127: software keys are first-class; external/hardware signatures are optional. */
+/** ADR-130: software keys are first-class; external/hardware signatures are optional. */
 import {
   createHash,
   createPrivateKey,
@@ -12,24 +12,32 @@ import {
 import {
   closeSync,
   existsSync,
-  fstatSync,
   fsyncSync,
   linkSync,
   mkdirSync,
   openSync,
-  readSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_SCRIPT_PACKAGE_BYTES, packageScript } from "./package.js";
+import { ScriptPackageError, sortedJson, validateDescriptorSchema, validateManifest } from "./package.js";
+import { logicalPath, parseJson, projectFiles, readBounded, readProjectJson, utf8 } from "./package-input.js";
+import {
+  ASSET_LIMIT,
+  ENTRY_LIMIT,
+  FILE_LIMIT,
+  METADATA_LIMIT,
+  unzip,
+  writeZip,
+  ZIP_LIMIT,
+  zipIndex,
+} from "./package-zip.js";
 
-export const SIGNED_PACKAGE_LIMIT = 1500 * 1024;
 export type PublisherKey = { algorithm: "ed25519"; value: string };
 export const signingMessage = (payload: Uint8Array): Buffer =>
   Buffer.concat([
-    Buffer.from("elecon.script-package/3:ed25519:sha256\0", "utf8"),
+    Buffer.from("elecon.script-package/4:ed25519:sha256\0", "utf8"),
     createHash("sha256").update(payload).digest(),
   ]);
 export function canonicalBase64(value: unknown, size?: number): Buffer {
@@ -53,61 +61,6 @@ function publicObject(key: PublisherKey): KeyObject {
     format: "jwk",
   });
 }
-export function validatePayload(bytes: Buffer): {
-  manifest: Record<string, unknown>;
-  source: string;
-  publicKey: PublisherKey;
-} {
-  if (bytes.length > MAX_SCRIPT_PACKAGE_BYTES) throw new Error("script_package_too_large");
-  const payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-  if (!payload || Object.keys(payload).sort().join() !== "manifest,publicKey,source")
-    throw new Error("script_payload_format");
-  publicObject(payload.publicKey);
-  // Validate semantics, but never replace the signed bytes with this serialization.
-  packageScript(payload.manifest, payload.source, payload.publicKey);
-  return payload;
-}
-export function assembleSignedPackage(payload: Buffer, signature: Buffer): string {
-  const data = validatePayload(payload);
-  if (
-    signature.length !== 64 ||
-    !verify(null, signingMessage(payload), publicObject(data.publicKey), signature)
-  )
-    throw new Error("script_signature_invalid");
-  const result =
-    JSON.stringify({
-      format: "elecon-script/3",
-      payload: payload.toString("base64"),
-      signature: signature.toString("base64"),
-    }) + "\n";
-  if (Buffer.byteLength(result) > SIGNED_PACKAGE_LIMIT) throw new Error("script_package_too_large");
-  return result;
-}
-export function signScript(manifest: unknown, source: string, key: KeyObject): string {
-  const payload = Buffer.from(packageScript(manifest, source, publisherKey(key)));
-  return assembleSignedPackage(payload, sign(null, signingMessage(payload), key));
-}
-export function inspectSignedPackage(text: string) {
-  if (Buffer.byteLength(text) > SIGNED_PACKAGE_LIMIT) throw new Error("script_package_too_large");
-  const envelope = JSON.parse(text);
-  if (
-    !envelope ||
-    Object.keys(envelope).sort().join() !== "format,payload,signature" ||
-    envelope.format !== "elecon-script/3"
-  )
-    throw new Error("script_envelope_format");
-  const payload = canonicalBase64(envelope.payload);
-  assembleSignedPackage(payload, canonicalBase64(envelope.signature, 64));
-  const data = validatePayload(payload);
-  return {
-    packageId: data.manifest.id,
-    version: data.manifest.version,
-    publicKey: data.publicKey,
-    digest: createHash("sha256").update(payload).digest("hex"),
-    fingerprint: createHash("sha256").update(canonicalBase64(data.publicKey.value, 32)).digest("hex"),
-  };
-}
-
 /** No overwriting, including symlinks/hardlinks. Private keys never appear in diagnostics. */
 export function writeExclusive(path: string, bytes: string | Buffer): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -145,100 +98,237 @@ export function developmentKeyPath(directory: string): string {
       ? daily
       : resolve(directory, ".elecon/keys/publisher.pem");
 }
-function readBounded(path: string, limit = MAX_SCRIPT_PACKAGE_BYTES): Buffer {
-  const fd = openSync(path, "r");
-  try {
-    if (!fstatSync(fd).isFile() || fstatSync(fd).size > limit) throw new Error("script_input_size");
-    const bytes = Buffer.alloc(limit + 1);
-    let length = 0;
-    while (length < bytes.length) {
-      const count = readSync(fd, bytes, length, bytes.length - length, null);
-      if (!count) break;
-      length += count;
-    }
-    if (length > limit) throw new Error("script_input_size");
-    return bytes.subarray(0, length);
-  } finally {
-    closeSync(fd);
+
+type Descriptor = {
+  format: "elecon-script/4";
+  publicKey: PublisherKey;
+  manifest: Record<string, unknown>;
+  entry: string;
+  files: { path: string; size: number; sha256: string }[];
+};
+export type PackageFiles = { entry: string; files: ReadonlyMap<string, Buffer> };
+const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
+
+export function parsePayload(bytes: Buffer): Descriptor {
+  if (bytes.length > METADATA_LIMIT) throw new Error("script_package_too_large");
+  const desc = parseJson(bytes, true) as Descriptor;
+  if (!Array.isArray(desc?.files) || desc.files.length > FILE_LIMIT || !validateDescriptorSchema(desc))
+    throw new ScriptPackageError("script_package_manifest_invalid");
+  publicObject(desc.publicKey);
+  validateManifest(desc.manifest);
+  let total = 0;
+  let previous = "";
+  const sizes = new Map<string, number>();
+  for (const file of desc.files) {
+    total += file.size;
+    if (
+      !logicalPath(file.path) ||
+      file.path <= previous ||
+      total > ZIP_LIMIT ||
+      (sizes.has(file.sha256) && sizes.get(file.sha256) !== file.size) ||
+      (file.path === desc.entry && file.size > ENTRY_LIMIT)
+    )
+      throw new Error("script_package_files");
+    previous = file.path;
+    sizes.set(file.sha256, file.size);
   }
+  if (!desc.files.some((file) => file.path === desc.entry)) throw new Error("script_package_entry_missing");
+  if (desc.manifest.checkinPage !== undefined) {
+    const page = desc.files.find((file) => file.path === desc.manifest.checkinPage);
+    if (!page || page.path === desc.entry || page.size < 1 || page.size > 256 * 1024)
+      throw new Error("script_package_checkin_page_invalid");
+  }
+  return desc;
 }
+
+function sourceText(bytes: Buffer) {
+  const text = utf8(bytes);
+  if (!text.trim() || text.includes("\0")) throw new ScriptPackageError("script_package_source_invalid");
+  return text;
+}
+
+/** Freeze P, without treating JS text re-encoding or transport compression as source bytes. */
+export function preparePackage(manifest: unknown, project: PackageFiles, publicKey: PublisherKey): Buffer {
+  if (project.files.size > FILE_LIMIT) throw new Error("script_package_files");
+  const entry = project.files.get(project.entry);
+  if (!entry) throw new Error("script_package_entry_missing");
+  if (entry.length > ENTRY_LIMIT) throw new Error("script_package_too_large");
+  sourceText(entry);
+  let total = 0;
+  const files = [...project.files.keys()].sort().map((path) => {
+    const bytes = project.files.get(path)!;
+    total += bytes.length;
+    if (bytes.length > ASSET_LIMIT || total > ZIP_LIMIT) throw new Error("script_package_too_large");
+    return { path, size: bytes.length, sha256: hash(bytes) };
+  });
+  const key = { algorithm: publicKey.algorithm, value: publicKey.value };
+  const payload = Buffer.from(
+    `{"format":"elecon-script/4","publicKey":${JSON.stringify(key)},"manifest":${sortedJson(manifest)},` +
+      `"entry":${JSON.stringify(project.entry)},"files":${JSON.stringify(files)}}`,
+  );
+  parsePayload(payload);
+  return payload;
+}
+
+function verifySignature(payload: Buffer, key: PublisherKey, signature: Buffer) {
+  if (signature.length !== 64 || !verify(null, signingMessage(payload), publicObject(key), signature))
+    throw new Error("script_signature_invalid");
+}
+
+export function assembleSignedPackage(payload: Buffer, signature: Buffer, project: PackageFiles): Buffer {
+  const desc = parsePayload(payload);
+  verifySignature(payload, desc.publicKey, signature);
+  if (desc.files.length !== project.files.size || project.entry !== desc.entry)
+    throw new Error("script_package_files");
+  const physical = new Map([
+    ["package.json", payload],
+    ["signature.ed25519", signature],
+  ]);
+  for (const { path, size, sha256 } of desc.files) {
+    const bytes = project.files.get(path);
+    if (!bytes || bytes.length !== size || hash(bytes) !== sha256) throw new Error("script_package_corrupt");
+    if (path === desc.entry) sourceText(bytes);
+    physical.set("blobs/" + sha256, bytes);
+  }
+  return writeZip(physical);
+}
+export function signPrepared(manifest: unknown, project: PackageFiles, key: KeyObject): Buffer {
+  const payload = preparePackage(manifest, project, publisherKey(key));
+  return assembleSignedPackage(payload, sign(null, signingMessage(payload), key), project);
+}
+export function signScript(
+  manifest: unknown,
+  source: string,
+  key: KeyObject,
+  entry = "dist/adapter.mjs",
+): Buffer {
+  return signPrepared(manifest, { entry, files: new Map([[entry, Buffer.from(source)]]) }, key);
+}
+export function verifyPackage(bytes: Buffer) {
+  const index = zipIndex(bytes);
+  const payload = unzip(index.get("package.json"));
+  const signature = unzip(index.get("signature.ed25519"), 64);
+  const desc = parsePayload(payload);
+  verifySignature(payload, desc.publicKey, signature);
+  const unique = new Map(desc.files.map((f) => [f.sha256, f.size]));
+  if (index.size !== unique.size + 2) throw new Error("script_package_files");
+  const entryDigest = desc.files.find((f) => f.path === desc.entry)!.sha256;
+  let source = "";
+  for (const [digest, size] of unique) {
+    const content = unzip(index.get("blobs/" + digest), size);
+    if (hash(content) !== digest) throw new Error("script_package_corrupt");
+    if (digest === entryDigest) source = sourceText(content);
+  }
+  return { desc, payload, signature, source };
+}
+export function inspectSignedPackage(bytes: Buffer) {
+  const { desc, payload } = verifyPackage(bytes);
+  return {
+    packageId: desc.manifest.id,
+    version: desc.manifest.version,
+    publicKey: desc.publicKey,
+    fingerprint: hash(canonicalBase64(desc.publicKey.value, 32)),
+    digest: hash(payload),
+    entry: desc.entry,
+    files: desc.files,
+  };
+}
+
 export function signingCli(args: string[]): object {
   const command = args[0];
-  const shapes: Record<string, string[]> = {
+  const required: Record<string, string[]> = {
     keygen: ["key", "out"],
     sign: ["manifest", "source", "key", "out"],
     prepare: ["manifest", "source", "public-key", "out", "message"],
-    assemble: ["payload", "signature", "out"],
+    assemble: ["payload", "signature", "source", "out"],
     inspect: ["package"],
   };
-  if (!command || !shapes[command]) throw new Error("script_sign_usage");
+  if (!command || !Object.hasOwn(required, command)) throw new Error("script_sign_usage");
   const cwd =
     process.env.npm_lifecycle_event === "scripts:sign" && process.env.INIT_CWD
       ? process.env.INIT_CWD
       : process.cwd();
+  const allowed = new Set(required[command]);
+  if (["sign", "prepare", "assemble"].includes(command)) {
+    allowed.add("root");
+    allowed.add("assets");
+    if (command !== "assemble") allowed.add("entry");
+  }
   const options = new Map<string, string>();
   for (let i = 1; i < args.length; i += 2) {
-    const name = args[i]?.slice(2),
-      value = args[i + 1];
+    const name = args[i]?.slice(2);
+    const value = args[i + 1];
     if (
       !args[i]?.startsWith("--") ||
       !name ||
-      !shapes[command]!.includes(name) ||
+      !allowed.has(name) ||
       options.has(name) ||
       !value ||
       value.startsWith("--")
     )
       throw new Error("script_sign_usage");
-    options.set(name, resolve(cwd, value));
+    options.set(name, name === "entry" ? value : resolve(cwd, value));
   }
-  if (options.size !== shapes[command]!.length || new Set(options.values()).size !== options.size)
-    throw new Error("script_sign_usage");
+  if (required[command]!.some((k) => !options.has(k))) throw new Error("script_sign_usage");
+  const io = [...options].filter(([k]) => k !== "root" && k !== "entry").map(([, v]) => v);
+  if (new Set(io).size !== io.length) throw new Error("script_sign_usage");
   const path = (name: string) => options.get(name)!;
-  const json = (name: string) =>
-    JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(readBounded(path(name))));
-  if (command === "inspect")
-    return inspectSignedPackage(readBounded(path("package"), SIGNED_PACKAGE_LIMIT).toString("utf8"));
+  if (command === "inspect") return inspectSignedPackage(readBounded(path("package"), ZIP_LIMIT));
   if (command === "keygen") {
     const key = generateKeyPairSync("ed25519").privateKey;
     writeExclusive(path("key"), key.export({ type: "pkcs8", format: "pem" }).toString());
     writeExclusive(path("out"), JSON.stringify(publisherKey(key), null, 2) + "\n");
     return { created: true, publicKey: publisherKey(key) };
   }
-  if (command === "prepare" || command === "sign") {
-    const manifest = json("manifest");
-    const source = new TextDecoder("utf-8", { fatal: true }).decode(readBounded(path("source")));
+  const assembling = command === "assemble";
+  const frozen = assembling ? readBounded(path("payload"), METADATA_LIMIT) : undefined;
+  const root = options.get("root") ?? dirname(assembling ? path("source") : path("manifest"));
+  const project = projectFiles(
+    path("source"),
+    root,
+    frozen ? parsePayload(frozen).entry : options.get("entry"),
+    options.get("assets"),
+    ["key", "out", "message", "public-key", "signature", "payload", "manifest"]
+      .filter((k) => options.has(k))
+      .map(path),
+  );
+  let output: Buffer;
+  if (frozen) {
+    output = assembleSignedPackage(frozen, readBounded(path("signature"), 64), project);
+  } else {
+    const manifest = readProjectJson(root, path("manifest"));
     if (command === "prepare") {
-      const key = json("public-key") as PublisherKey;
-      publicObject(key);
-      const payload = Buffer.from(packageScript(manifest, source, key));
+      const key = parseJson(readBounded(path("public-key"), METADATA_LIMIT)) as PublisherKey;
+      const payload = preparePackage(manifest, project, key);
       writeExclusive(path("out"), payload);
       writeExclusive(path("message"), signingMessage(payload));
-      return { prepared: true };
+      return { prepared: true, digest: hash(payload) };
     }
-    const output = signScript(manifest, source, loadKey(path("key"), true));
-    writeExclusive(path("out"), output);
-    return inspectSignedPackage(output);
+    output = signPrepared(manifest, project, loadKey(path("key"), true));
   }
-  const output = assembleSignedPackage(readBounded(path("payload")), readBounded(path("signature"), 64));
+  const info = inspectSignedPackage(output);
   writeExclusive(path("out"), output);
-  return inspectSignedPackage(output);
+  return info;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     if (process.argv.length === 2 || process.argv[2] === "--help") {
-      process.stdout.write(`elecon-script/3 source signing (ADR-127)\n
-sign --manifest manifest.json --source bundled.js --key publisher.pem --out signed.elecon.json
-  Creates an unencrypted Ed25519 PKCS8 PEM key if missing; reuses it for future releases.
+      process.stdout.write(`elecon-script/4 (ADR-130)
+sign --manifest manifest.json --source dist/adapter.mjs --key publisher.pem --out release.eleconpkg
 keygen --key publisher.pem --out public-key.json
-inspect --package signed.elecon.json
-prepare --manifest manifest.json --source bundled.js --public-key public-key.json --out payload.json --message message.bin
-assemble --payload payload.json --signature signature.bin --out signed.elecon.json
-  External signers sign the 71 bytes of message.bin directly with Ed25519 and return a raw 64-byte signature.
-Output files are exclusive: existing files are never overwritten. Retain your private key.\n`);
+inspect --package release.eleconpkg
+prepare --manifest manifest.json --source dist/adapter.mjs --public-key public-key.json --out package.json --message message.bin
+assemble --payload package.json --signature signature.bin --source dist/adapter.mjs --out release.eleconpkg
+sign and prepare accept --entry <logical path>. All build commands accept --root <directory> and
+--assets <JSON file mapping logical paths to project-relative source files>. For assemble, use
+the same project root and assets as prepare. External signers sign the 71-byte message.bin
+with ordinary Ed25519 and return the raw 64-byte signature. Existing output files are preserved.\n`);
     } else process.stdout.write(JSON.stringify(signingCli(process.argv.slice(2)), null, 2) + "\n");
   } catch (error) {
     const message =
-      error instanceof Error && /^script_[a-z_]+$/.test(error.message) ? error.message : "script_sign_failed";
+      error instanceof Error && /^script_[a-z0-9_]+$/.test(error.message)
+        ? error.message
+        : "script_sign_failed";
     process.stderr.write(`${message}\n`);
     process.exitCode = 1;
   }

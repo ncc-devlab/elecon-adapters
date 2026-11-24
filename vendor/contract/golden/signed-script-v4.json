@@ -1,0 +1,31 @@
+{
+  "note": "Public synthetic ADR-130 test vector",
+  "packageId": "synthetic.signed",
+  "version": "1.0.0",
+  "publicKey": {
+    "algorithm": "ed25519",
+    "value": "LJuaQtV63/1Q5usdpUPek62X022XbSorlzXnFC8/uFk="
+  },
+  "fingerprint": "aab061da791286a3b2bcf30191d072b1e04d4f8eb5540f00a4bd37ca16efefc8",
+  "digest": "34e83bcda94eb440066409a651becd6ee9ab0954a6939b2c51ae70f7feea1093",
+  "entry": "dist/adapter.mjs",
+  "files": [
+    {
+      "path": "assets/labels.json",
+      "size": 37,
+      "sha256": "ecda06b2fad0aadd577141d9b3880610528ae51423c4c88616d420acf65b6067"
+    },
+    {
+      "path": "assets/weights.bin",
+      "size": 4,
+      "sha256": "89273d2f70b93285bb7ddb4bcee86a5347ca7159352e3cbdd20c23e9d1e507d3"
+    },
+    {
+      "path": "dist/adapter.mjs",
+      "size": 525,
+      "sha256": "f3fbcad8300d2d00fef6e6d25dabd824b7de8cc776e8ff19064b8de10898c264"
+    }
+  ],
+  "payload": "{\"format\":\"elecon-script/4\",\"publicKey\":{\"algorithm\":\"ed25519\",\"value\":\"LJuaQtV63/1Q5usdpUPek62X022XbSorlzXnFC8/uFk=\"},\"manifest\":{\"accounts\":[],\"browser\":false,\"capabilities\":[{\"id\":\"notice.list\",\"schema\":\"elecon.notice.list\",\"schemaVersion\":\"1.1\"}],\"id\":\"synthetic.signed\",\"name\":\"合成学校 🌱\",\"network\":{\"origins\":[]},\"schoolId\":\"synthetic\",\"sdkVersion\":28,\"version\":\"1.0.0\"},\"entry\":\"dist/adapter.mjs\",\"files\":[{\"path\":\"assets/labels.json\",\"size\":37,\"sha256\":\"ecda06b2fad0aadd577141d9b3880610528ae51423c4c88616d420acf65b6067\"},{\"path\":\"assets/weights.bin\",\"size\":4,\"sha256\":\"89273d2f70b93285bb7ddb4bcee86a5347ca7159352e3cbdd20c23e9d1e507d3\"},{\"path\":\"dist/adapter.mjs\",\"size\":525,\"sha256\":\"f3fbcad8300d2d00fef6e6d25dabd824b7de8cc776e8ff19064b8de10898c264\"}]}",
+  "signatureBase64": "MegPs4IUpLNRioiWFUxJiJOLN5aOWoNI1amb1BiEgjz7SR083ohGLJLGh78DojISGA0Yf+qOtc5poz4GFxdUCA=="
+}

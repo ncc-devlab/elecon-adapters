@@ -10,8 +10,7 @@ schema/          JSON Schema 定义（Draft 2020-12），所有数据域的唯�
 capability/      capability id 注册表（registry.json）
 script-package.schema.json   作者构建输入（manifest 与 source）
 script-sdk/      新受信脚本 SDK：真实凭据、宿主 HTTP 与可见浏览器 API
-signed-script-package.schema.json   ADR-127 客户端接收的 /3 签名封装
-signed-script-payload.schema.json   固定原始载荷、包/发布者身份与 SDK26 依赖
+signed-script-package.schema.json   /4 的 package.json、发布公钥、逻辑文件表与入口
 ```
 
 ## 使用
@@ -32,11 +31,11 @@ signed-script-payload.schema.json   固定原始载荷、包/发布者身份与 
 
 ## 源码执行路线
 
-新功能以 [ADR-034](../docs/adr/adr_034_trusted_school_scripts.md) 的源码路径为准：用户确认内容后安装通过 [ADR-127](../docs/adr/adr_127_digest_signed_script_packages.md) 验签的 `elecon-script/3`，统一 async handler 可读写当前学校身份凭据；客户端是唯一生产执行面。tools 检查与打包，不运行学校代码。源码包不声明 V1 requestGraph、credentials 配方或 masker.json。
+新功能以 [ADR-034](../docs/adr/adr_034_trusted_school_scripts.md) 的源码路径为准：宿主按 [ADR-130](../docs/adr/adr_130_script_package_assets.md) 验证 `elecon-script/4` 清单签名及每个文件，再由用户审查并批准具体摘要，统一 async handler 可读写当前学校身份凭据；客户端是唯一生产执行面。tools 检查与打包，不运行学校代码。源码包不声明 V1 requestGraph、credentials 配方或 masker.json。
 
 V1 manifest/adapter-sdk/Broker/Masker 及专属 golden 已按 ADR-118 退役。现有领域 schema、源码 SDK 与签名 golden 保留；不将 V1 的 official-only 或凭据不可见要求套给当前受信源码。
 
-`format`（elecon-script/3）、`sdkVersion`（宿主 API）、`manifest.version`（单脚本更新）、capability 的 `schemaVersion`（业务输出）及应用版本相互独立。不要为脚本接口修复改动业务 schema 版本，也不要把 V2 分支名当作格式或应用版本号。安装版本与 digest 行为见 [使用文档](../docs/reference/trusted_scripts.md)。
+`format`（elecon-script/4）、`sdkVersion`（宿主 API）、`manifest.version`（单脚本更新）、capability 的 `schemaVersion`（业务输出）及应用版本相互独立。不要为脚本接口修复改动业务 schema 版本，也不要把 V2 分支名当作格式或应用版本号。安装版本与 digest 行为见 [使用文档](../docs/reference/trusted_scripts.md)。
 
 SDK 2 的凭据地址与写入语义见 [ADR-035](../docs/adr/adr_035_script_credential_identity.md)：namespace 默认脚本 id，记录 id/namespace/key 可往返；同校显式共享仍在同一授权身份内。SDK 1 为已有预览包保留原有寻址，不静默升级或猜测旧记录归属。
 

@@ -10,7 +10,6 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
-  readSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -21,10 +20,10 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { capabilityPolicy } from "./capability-policy.js";
 import { validateScriptLocalization } from "./localization.js";
 import { validateScriptNetwork } from "./network.js";
-import { developmentKeyPath, loadKey, signScript } from "./sign.js";
+import { logicalPath, projectFiles, readProjectJson } from "./package-input.js";
+import { ENTRY_LIMIT } from "./package-zip.js";
+import { developmentKeyPath, loadKey, signPrepared } from "./sign.js";
 import { validateScriptWebContent } from "./web-content.js";
-
-export const MAX_SCRIPT_PACKAGE_BYTES = 1024 * 1024;
 
 export class ScriptPackageError extends Error {
   constructor(readonly code: string) {
@@ -36,40 +35,40 @@ export class ScriptPackageError extends Error {
 const schemaPath = fileURLToPath(new URL("../../../contract/script-package.schema.json", import.meta.url));
 const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
 const ajv = new Ajv2020({ allErrors: true, strict: true });
-const validate = ajv.compile(schema);
-const validateSigned = ajv.compile(
+ajv.addSchema(schema);
+const validate = ajv.compile({ $ref: "elecon.script-package#/properties/manifest" });
+
+export const validateDescriptorSchema = ajv.compile(
   JSON.parse(
     readFileSync(
-      fileURLToPath(new URL("../../../contract/signed-script-payload.schema.json", import.meta.url)),
+      fileURLToPath(new URL("../../../contract/signed-script-package.schema.json", import.meta.url)),
       "utf8",
     ),
   ),
 );
 
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical);
+/** Emit UTF-16 key order directly; ordinary JS object enumeration would reorder numeric keys. */
+export function sortedJson(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(sortedJson).join(",") + "]";
   if (value !== null && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    return Object.fromEntries(
+    return (
+      "{" +
       Object.keys(record)
         .sort()
-        .map((key) => [key, canonical(record[key])]),
+        .map((key) => JSON.stringify(key) + ":" + sortedJson(record[key]))
+        .join(",") +
+      "}"
     );
   }
-  return value;
+  const encoded = JSON.stringify(value);
+  if (encoded === undefined || (typeof value === "number" && !Number.isFinite(value)))
+    throw new ScriptPackageError("script_package_manifest_invalid");
+  return encoded;
 }
 
-/** Returns stable UTF-8 JSON; never creates a runtime or evaluates source. */
-export function packageScript(
-  manifest: unknown,
-  source: unknown,
-  publicKey?: { algorithm: "ed25519"; value: string },
-): string {
-  if (typeof source !== "string" || !source.trim() || source.includes("\0")) {
-    throw new ScriptPackageError("script_package_source_invalid");
-  }
-  const candidate = publicKey ? { manifest, source, publicKey } : { manifest, source };
-  if (!(publicKey ? validateSigned(candidate) : validate(candidate))) {
+export function validateManifest(manifest: unknown): void {
+  if (!validate(manifest)) {
     // AJV errors can include source-controlled fields. Keep CLI diagnostics
     // stable instead of accidentally echoing embedded credentials or URLs.
     throw new ScriptPackageError("script_package_manifest_invalid");
@@ -91,7 +90,8 @@ export function packageScript(
     }>;
     home?: Array<{ capability: string; params?: Record<string, unknown> }>;
     dataCache?: Array<{ capability: string; ttlSeconds: number }>;
-    datasets?: Array<{ id: string }>;
+    datasets?: Array<{ id: string; kind?: string }>;
+    settings?: { fields: Array<{ id: string; dataset: string; key: string }> };
     dependencies?: Array<{
       packageId: string;
       publicKey: { algorithm: "ed25519"; value: string };
@@ -103,6 +103,7 @@ export function packageScript(
     appTunnels?: string[];
     localization?: unknown;
     webContent?: unknown;
+    checkinPage?: string;
     cards?: Array<{ type: string; defaultVariant: string; id?: string; title?: string; pageId?: string }>;
     pages?: Array<{ id: string; title: string; template: string; tab?: boolean; webPageId?: string }>;
     accounts?: Array<{
@@ -144,6 +145,12 @@ export function packageScript(
   ) {
     throw new ScriptPackageError("script_package_manifest_invalid");
   }
+  const checkin = typed.capabilities.find((item) => item.id === "attendance.checkin");
+  if (
+    (checkin?.schemaVersion === "2.0" && typed.sdkVersion < 29) ||
+    (typed.checkinPage !== undefined &&
+      (checkin?.schemaVersion !== "2.0" || !logicalPath(typed.checkinPage)))
+  ) throw new ScriptPackageError("script_package_manifest_invalid");
   const capabilityIds = new Set(typed.capabilities.map((capability) => capability.id));
   const sessions = new Map(
     (typed.accounts ?? []).flatMap((account) =>
@@ -231,6 +238,14 @@ export function packageScript(
   if (
     new Set((typed.datasets ?? []).map((item) => item.id)).size !== (typed.datasets ?? []).length ||
     new Set((typed.dataCache ?? []).map((item) => item.capability)).size !== (typed.dataCache ?? []).length
+  ) {
+    throw new ScriptPackageError("script_package_manifest_invalid");
+  }
+  const settings = typed.settings?.fields ?? [];
+  if (
+    new Set(settings.map((field) => field.id)).size !== settings.length ||
+    new Set(settings.map((field) => field.dataset + ":" + field.key)).size !== settings.length ||
+    settings.some((field) => !typed.datasets?.some((dataset) => dataset.id === field.dataset && dataset.kind === "storage"))
   ) {
     throw new ScriptPackageError("script_package_manifest_invalid");
   }
@@ -431,38 +446,23 @@ export function packageScript(
   } catch (error) {
     throw new ScriptPackageError(error instanceof Error ? error.message : "script_package_network_invalid");
   }
-  const encoded = `${JSON.stringify(canonical(candidate))}\n`;
-  if (Buffer.byteLength(encoded, "utf8") > MAX_SCRIPT_PACKAGE_BYTES) {
-    throw new ScriptPackageError("script_package_too_large");
-  }
-  return encoded;
 }
 
-function readBoundedUtf8(path: string): string {
-  const descriptor = openSync(path, "r");
-  try {
-    const buffer = Buffer.alloc(MAX_SCRIPT_PACKAGE_BYTES + 1);
-    let size = 0;
-    while (size < buffer.length) {
-      const count = readSync(descriptor, buffer, size, buffer.length - size, null);
-      if (count === 0) break;
-      size += count;
-    }
-    if (size > MAX_SCRIPT_PACKAGE_BYTES) {
-      throw new ScriptPackageError("script_package_input_too_large");
-    }
-    try {
-      return new TextDecoder("utf-8", { fatal: true }).decode(buffer.subarray(0, size));
-    } catch {
-      throw new ScriptPackageError("script_package_utf8_invalid");
-    }
-  } finally {
-    closeSync(descriptor);
+// Used by schema and SDK semantic tests for their original declared versions.
+export function packageScript(manifest: unknown, source: unknown): string {
+  validateManifest(manifest);
+  if (typeof source !== "string" || !source.trim() || source.includes("\0")) {
+    throw new ScriptPackageError("script_package_source_invalid");
   }
+  const candidate = { manifest, source };
+  if (Buffer.byteLength(source, "utf8") > ENTRY_LIMIT) {
+    throw new ScriptPackageError("script_package_too_large");
+  }
+  return `${sortedJson(candidate)}\n`;
 }
 
 function argumentsFor(args: string[]): Map<string, string> {
-  const allowed = new Set(["--manifest", "--source", "--out"]);
+  const allowed = new Set(["--manifest", "--source", "--out", "--root", "--entry", "--assets"]);
   const values = new Map<string, string>();
   for (let index = 0; index < args.length; index++) {
     const argument = args[index]!;
@@ -474,7 +474,8 @@ function argumentsFor(args: string[]): Map<string, string> {
     }
     values.set(key, value);
   }
-  if (values.size !== allowed.size) throw new ScriptPackageError("script_package_usage");
+  if (!["--manifest", "--source", "--out"].every((k) => values.has(k)))
+    throw new ScriptPackageError("script_package_usage");
   return values;
 }
 
@@ -494,9 +495,10 @@ export function packageScriptFiles(args: string[]): void {
   if (output === manifestPath || output === sourcePath) {
     throw new ScriptPackageError("script_package_output_is_input");
   }
+  const root = values.has("--root") ? resolve(callerDirectory, values.get("--root")!) : dirname(manifestPath);
   let manifest: unknown;
   try {
-    manifest = JSON.parse(readBoundedUtf8(manifestPath));
+    manifest = readProjectJson(root, manifestPath);
   } catch (error) {
     if (error instanceof ScriptPackageError) throw error;
     if (error instanceof SyntaxError) throw new ScriptPackageError("script_package_json_invalid");
@@ -505,11 +507,14 @@ export function packageScriptFiles(args: string[]): void {
   const keyPath = developmentKeyPath(callerDirectory);
   if ([output, manifestPath, sourcePath].includes(keyPath))
     throw new ScriptPackageError("script_package_output_is_input");
-  const encoded = signScript(
-    manifest,
-    readBoundedUtf8(sourcePath),
-    loadKey(keyPath, !process.env.ELECON_SCRIPT_KEY),
+  const project = projectFiles(
+    sourcePath,
+    root,
+    values.get("--entry"),
+    values.has("--assets") ? resolve(callerDirectory, values.get("--assets")!) : undefined,
+    [keyPath, manifestPath, output],
   );
+  const encoded = signPrepared(manifest, project, loadKey(keyPath, !process.env.ELECON_SCRIPT_KEY));
   const directory = dirname(output);
   mkdirSync(directory, { recursive: true });
   const temporary = join(directory, `.elecon-script-${randomBytes(12).toString("hex")}.tmp`);
@@ -533,7 +538,11 @@ if (invokedPath && resolve(invokedPath) === fileURLToPath(import.meta.url)) {
     packageScriptFiles(process.argv.slice(2));
     console.log("script_package_created");
   } catch (error) {
-    console.error(error instanceof ScriptPackageError ? error.code : "script_package_io_failed");
+    console.error(
+      error instanceof Error && /^script_[a-z0-9_]+$/.test(error.message)
+        ? error.message
+        : "script_package_io_failed",
+    );
     process.exitCode = 1;
   }
 }

@@ -1,46 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "elecon.params.attendance.checkin",
-  "title": "扫码签到参数",
-  "description": "ADR-055：前台单次扫码提交；位置由用户选定，不预加载或缓存签到。",
+  "title": "签到页面参数",
+  "description": "ADR-133：用户启动签到时由当前包传入其页面选择。",
   "type": "object",
   "properties": {
-    "location": {
-      "type": "object",
-      "description": "本次用户明确选中的服务原生坐标；缺省不指定位置，不声称实测 GPS。",
-      "properties": {
-        "latitude": {
-          "type": "number",
-          "minimum": -90,
-          "maximum": 90,
-          "description": "服务原生纬度，十进制度，有限数。"
-        },
-        "longitude": {
-          "type": "number",
-          "minimum": -180,
-          "maximum": 180,
-          "description": "服务原生经度，十进制度，有限数。"
-        },
-        "address": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200,
-          "pattern": "\\S",
-          "description": "本次所选地点地址，非空且最长 200 字。"
-        },
-        "coordinateSystem": {
-          "type": "string",
-          "const": "service",
-          "description": "service 表示该来源服务所要求的原生坐标；从同一服务取得，不推断地图供应商或转换。"
-        }
-      },
-      "required": [
-        "latitude",
-        "longitude",
-        "address",
-        "coordinateSystem"
-      ],
-      "additionalProperties": false
+    "pageInput": {
+      "type": "string",
+      "maxLength": 8192,
+      "description": "同包页面编码的本次输入，最多 8192 个 Unicode 码点，缺省为空；由包解释。"
     }
   },
   "required": [],

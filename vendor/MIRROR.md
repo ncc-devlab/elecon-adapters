@@ -10,7 +10,7 @@
 | `adapters/_template/` | core `adapters/_template/` | 贡献脚手架 |
 | `tools/src/{script,scanner,codegen,schema}/` | core `tools/src/` | 源码打包/签名、数据扫描和契约生成；不含私钥 |
 
-- 源版本（core）：`4c6315e61e91a97c89655ec65c87bf0199d29a02`
+- 源版本（core）：`216c91c926a99dff43d436f4d99cee7d2dd7e4a6`
 - stdlib 版本：1.0.0
 
 > 若核心 tool 依赖（ajv / ajv-formats / tsx）版本变化，需同步更新公开仓根 `package.json`。

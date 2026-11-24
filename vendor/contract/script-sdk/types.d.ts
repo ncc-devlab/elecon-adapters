@@ -98,9 +98,17 @@ export interface ScriptBrowserInteractionResult<T = unknown> {
   value: T | null;
   cookies: Array<{url: string; cookies: unknown[]}>;
 }
+/** SDK28 read-only files in the current approved package, relative to its root. */
+export interface PackageAssets {
+  stat(path: string): Promise<{size: number; sha256: string}>;
+  /** Exact byte range, inclusive offset and exclusive end. At most 1 MiB per read. */
+  readBytes(path: string, range?: {offset: number; length: number}): Promise<Uint8Array>;
+}
 export interface ScriptContext {
+  /** SDK28. Excludes the JS entry. Reads consume host calls and up to 256 MiB per invocation. */
+  readonly assets?: PackageAssets;
   /** SDK25 bound stores. Host owns identity, serialization, commit and capacity. */
-  readonly storage?: { open(dataset: string): ScriptStore };
+  readonly storage?: { open(dataset: string): ScriptPersistentStore };
   readonly cache?: { open(dataset: string): ScriptCache };
   /** Shorten this standard result's TTL within the manifest limit. */
   readonly query?: { cache: { configure(options: {ttlSeconds: number}): Promise<void> } };
@@ -568,6 +576,12 @@ export interface ScriptStore {
   set(key: string, value: ScriptStateValue): Promise<void>;
   delete(key: string): Promise<void>;
   list(options?: {prefix?: string; afterKey?: string; limit?: number}): Promise<ScriptDataRecord[]>;
+}
+export interface ScriptPersistentStore extends ScriptStore {
+  /** SDK29. Commit just this key immediately; later invocation failure preserves the write. */
+  save?(key: string, value: ScriptStateValue): Promise<void>;
+  /** SDK29. Commit removal immediately. Conflicts with staged changes to this key. */
+  remove?(key: string): Promise<void>;
 }
 export interface ScriptCache extends ScriptStore {
   set(key: string, value: ScriptStateValue, options?: {ttlSeconds: number}): Promise<void>;

@@ -1,7 +1,7 @@
 {
-  "sdkVersion": 13,
+  "sdkVersion": 28,
   "id": "school-localized-example",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "schoolId": "example",
   "name": "Example multilingual script",
   "network": { "origins": [] },
